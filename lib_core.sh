@@ -4,6 +4,49 @@
 # lib_core.sh - Funções de Segurança, S3 e Execução
 # ==========================================
 
+check_aws_session_and_list_buckets() {
+    local s3_output
+
+    if ! s3_output=$(aws s3 ls 2>/dev/null); then
+        return 1
+    fi
+
+    echo "$s3_output" | awk '{print $3}' | sed '/^$/d'
+}
+
+list_docker_volumes() {
+    docker volume ls --format '{{.Name}}' 2>/dev/null
+}
+
+build_target_key() {
+    local type=$1
+    local target=$2
+    local key
+
+    if [[ "$type" == "dir" ]]; then
+        key=${target#/}
+        key=${key//\//__}
+    else
+        key=$target
+    fi
+
+    key=$(echo "$key" | sed 's/[^a-zA-Z0-9._-]/_/g')
+    [[ -z "$key" ]] && key="target"
+    echo "$key"
+}
+
+download_manifest_preview() {
+    local s3_src_tar=$1
+    local s3_src_manifest=${s3_src_tar/.tar.gz/.manifest.json}
+    local tmp_manifest="/tmp/preview_$(basename "$s3_src_manifest")_$$"
+
+    if ! aws s3 cp "$s3_src_manifest" "$tmp_manifest" >/dev/null 2>&1; then
+        return 1
+    fi
+
+    echo "$tmp_manifest"
+}
+
 check_target_exists() {
     local type=$1
     local target=$2
@@ -58,27 +101,55 @@ EOF
 do_backup() {
     local type=$1
     local target_name=$2
-    local s3_dest=$3
+    local target_key=$3
+    local s3_dest=$4
 
-    local next_v=$(get_next_version "$s3_dest" "$target_name")
-    local tar_file="/tmp/${target_name}_v${next_v}.tar.gz"
-    local manifest_file="/tmp/${target_name}_v${next_v}.manifest.json"
+    local next_v
+    next_v=$(get_next_version "$s3_dest" "$target_key")
+    local tar_file="/tmp/${target_key}_v${next_v}.tar.gz"
+    local manifest_file="/tmp/${target_key}_v${next_v}.manifest.json"
 
     echo "Iniciando backup da versão v${next_v}..."
 
     if [[ "$type" == "volume" ]]; then
-        docker run --rm -v "$target_name":/data -v /tmp:/backup alpine tar -czf "/backup/${target_name}_v${next_v}.tar.gz" -C /data .
+        if ! docker run --rm -v "$target_name":/data -v /tmp:/backup alpine tar -czf "/backup/${target_key}_v${next_v}.tar.gz" -C /data .; then
+            echo "ERRO: Falha ao compactar o volume Docker '$target_name'."
+            return 1
+        fi
         local origin_path="docker_volume:$target_name"
     else
-        tar -czf "$tar_file" -C "$target_name" .
+        if ! tar -czf "$tar_file" -C "$target_name" .; then
+            echo "ERRO: Falha ao compactar o diretório '$target_name'."
+            return 1
+        fi
         local origin_path="$target_name"
     fi
 
-    local checksum=$(sha256sum "$tar_file" | awk '{print $1}')
-    generate_manifest "$target_name" "$next_v" "$origin_path" "$checksum" "$manifest_file"
+    local checksum
+    checksum=$(sha256sum "$tar_file" | awk '{print $1}')
+    if [[ -z "$checksum" ]]; then
+        echo "ERRO: Não foi possível calcular o SHA256 do pacote de backup."
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
 
-    aws s3 cp "$tar_file" "$s3_dest"
-    aws s3 cp "$manifest_file" "$s3_dest"
+    if ! generate_manifest "$target_name" "$next_v" "$origin_path" "$checksum" "$manifest_file"; then
+        echo "ERRO: Falha ao gerar o manifesto do backup."
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
+
+    if ! aws s3 cp "$tar_file" "$s3_dest"; then
+        echo "ERRO: Falha no upload do arquivo de backup para o S3."
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
+
+    if ! aws s3 cp "$manifest_file" "$s3_dest"; then
+        echo "ERRO: Falha no upload do manifesto para o S3."
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
 
     rm -f "$tar_file" "$manifest_file"
     echo "Backup finalizado e enviado com sucesso!"

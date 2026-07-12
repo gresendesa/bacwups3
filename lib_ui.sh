@@ -113,6 +113,21 @@ select_directory() {
     done
 }
 
+select_directory_backup_mode() {
+    local selected_mode
+
+    selected_mode=$(whiptail --title "Modo de Backup do Diretório" --menu "Escolha como o diretório deve ser empacotado:" \
+        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+        "none" "Diretório completo" \
+        "gitignore" "Projeto Git, respeitando .gitignore" 3>&1 1>&2 2>&3)
+
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    echo "$selected_mode"
+}
+
 select_restore_directory() {
     local current_dir=${1:-$HOME}
 

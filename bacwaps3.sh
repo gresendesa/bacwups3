@@ -86,6 +86,12 @@ main_loop() {
 
         [[ -z "$TARGET_NAME" ]] && continue
 
+        local FILTER_MODE="none"
+        if [[ "$ACTION" == "BACKUP" && "$TARGET_TYPE" == "dir" ]]; then
+            FILTER_MODE=$(select_directory_backup_mode)
+            [[ $? -ne 0 || -z "$FILTER_MODE" ]] && continue
+        fi
+
         local TARGET_KEY
         TARGET_KEY=$(build_target_key "$TARGET_TYPE" "$TARGET_NAME")
 
@@ -122,7 +128,7 @@ main_loop() {
         if [[ "$ACTION" == "BACKUP" ]]; then
             clear 
             echo "Iniciando processo de Backup..."
-            do_backup "$TARGET_TYPE" "$TARGET_NAME" "$TARGET_KEY" "$S3_PATH"
+            do_backup "$TARGET_TYPE" "$TARGET_NAME" "$TARGET_KEY" "$S3_PATH" "$FILTER_MODE"
             read -p "Pressione [ENTER] para voltar ao menu..."
         
         elif [[ "$ACTION" == "RESTORE" ]]; then

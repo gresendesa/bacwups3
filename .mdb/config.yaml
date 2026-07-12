@@ -1,0 +1,14 @@
+memory_root: scrum
+templates:
+  profile: standard
+  package: smd-default
+  version: 0.1.0
+project:
+  name: bacwups3
+  owner: gresendesa
+  language: pt_br
+  timezone: null
+context_anchoring:
+  secret_phrase: pebble amber loyal wizard wind
+  hooked_files:
+  - AGENTS.md

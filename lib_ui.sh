@@ -202,7 +202,17 @@ select_restore_directory() {
 
 select_s3_path() {
     local buckets_raw=$1
+    local mode=${2:-backup}
     local options=()
+    local title="Destino S3"
+    local bucket_prompt="Selecione o bucket de destino:"
+    local prefix_prompt="Informe um prefixo/pasta de destino (opcional). Ex: backups/projeto"
+
+    if [[ "$mode" == "restore" || "$mode" == "RESTORE" ]]; then
+        title="Origem S3"
+        bucket_prompt="Selecione o bucket onde o backup está armazenado:"
+        prefix_prompt="Informe o prefixo/pasta onde o backup está armazenado (opcional). Ex: backups/projeto"
+    fi
 
     options+=("ATUALIZAR" "Recarregar buckets da AWS")
 
@@ -216,7 +226,7 @@ select_s3_path() {
     fi
 
     local selected_bucket
-    selected_bucket=$(whiptail --title "Destino S3" --menu "Selecione o bucket de destino:" \
+    selected_bucket=$(whiptail --title "$title" --menu "$bucket_prompt" \
         $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
 
     if [ $? -ne 0 ]; then
@@ -228,7 +238,7 @@ select_s3_path() {
     fi
 
     local prefix
-    prefix=$(whiptail --title "Prefixo no Bucket" --inputbox "Informe um prefixo/pasta (opcional). Ex: backups/projeto" \
+    prefix=$(whiptail --title "$title - Prefixo no Bucket" --inputbox "$prefix_prompt" \
         $WT_HEIGHT $WT_WIDTH "" 3>&1 1>&2 2>&3)
 
     if [ $? -ne 0 ]; then

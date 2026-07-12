@@ -97,7 +97,7 @@ main_loop() {
 
         local S3_PATH
         while true; do
-            S3_PATH=$(select_s3_path "$AVAILABLE_BUCKETS")
+            S3_PATH=$(select_s3_path "$AVAILABLE_BUCKETS" "$ACTION")
             local s3_select_status=$?
 
             if [[ $s3_select_status -eq 2 ]]; then

@@ -3,6 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PATH="$ROOT_DIR/tests/fake-bin:$PATH"
 source "$ROOT_DIR/lib_core.sh"
 
 WORK_DIR=$(mktemp -d)
@@ -108,6 +109,7 @@ break.txt"
     grep -q '"git_metadata_included": false' "$MOCK_S3/project_v1.manifest.json"
     grep -q '"git_commit": "' "$MOCK_S3/project_v1.manifest.json"
     grep -q '"git_dirty": true' "$MOCK_S3/project_v1.manifest.json"
+    grep -q '"backup_mode": "full"' "$MOCK_S3/project_v1.manifest.json"
 }
 
 test_normal_directory_filter_mode() {

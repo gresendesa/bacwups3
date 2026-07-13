@@ -13,8 +13,9 @@ Ferramenta interativa de linha de comando (CLI) desenvolvida em Shell Script (Ba
 ## Segurança e Integridade
 
 * **Proteção Anti-Sobrescrita:** A restauração é imediatamente abortada caso o volume Docker ou o diretório de destino já existam e contenham dados, prevenindo perdas acidentais.
-* **Manifesto JSON de Rastreabilidade:** Cada backup gera um arquivo de metadados correspondente contendo o nome do alvo, versão, máquina de origem, usuário, caminho original, data e hash do pacote.
-* **Validação Criptográfica Rigorosa (SHA256):** * O hash SHA256 do arquivo `.tar.gz` é calculado no momento do upload e gravado no manifesto.
+* **Manifesto JSON de Rastreabilidade:** Cada backup gera um manifesto JSON com esquema inicial, modo `full`, ID do backup, tipo de alvo, origem, tamanho do pacote e hash SHA-256.
+* **Validação Criptográfica Rigorosa (SHA256):**
+  * O hash SHA256 do arquivo `.tar.gz` é calculado no momento do upload e gravado no manifesto.
   * No momento do download, o script recalcula o hash do pacote recebido e o cruza com o valor do manifesto para atestar a integridade. 
   * Em caso de divergência, o arquivo corrompido é sumariamente apagado e a extração é bloqueada.
 * **Execução Segura:** A ferramenta atua de forma passiva em relação aos serviços; ela emite avisos, mas não pausa contêineres automaticamente. O controle de concorrência é delegado ao administrador.
@@ -26,6 +27,7 @@ Para executar o `bacwups3`, certifique-se de ter os seguintes pacotes instalados
 * `bash` (Testado em ambientes Debian/Ubuntu/Mint)
 * `whiptail` (Para renderização da interface TUI)
 * `aws-cli` (Configurado com credenciais de acesso ao bucket S3 destino)
+* `jq` (Para geração e validação segura do manifesto JSON)
 * `git` (Obrigatório apenas para o modo de backup "Projeto Git")
 * `docker` (Obrigatório apenas se for interagir com volumes de contêineres)
 * Utilitários padrão do sistema: `tar`, `sha256sum`, `grep`, `awk`

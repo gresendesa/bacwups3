@@ -6,6 +6,7 @@ set -Eeuo pipefail
 # ==========================================
 
 BACWUPS3_WORKSPACE=${BACWUPS3_WORKSPACE:-}
+MANIFEST_SCHEMA_VERSION=1
 
 init_temp_workspace() {
     if [[ -n "$BACWUPS3_WORKSPACE" && -d "$BACWUPS3_WORKSPACE" ]]; then
@@ -36,6 +37,13 @@ check_aws_session_and_list_buckets() {
 
 list_docker_volumes() {
     docker volume ls --format '{{.Name}}' 2>/dev/null
+}
+
+require_jq() {
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "ERRO: Dependência obrigatória ausente: jq." >&2
+        return 1
+    fi
 }
 
 build_target_key() {
@@ -109,57 +117,152 @@ get_next_version() {
 }
 
 generate_manifest() {
-    local item_name=$1
-    local version=$2
-    local origin_path=$3
-    local checksum=$4
-    local manifest_file=$5
-    local filter_mode=${6:-none}
-    local git_commit=${7:-}
-    local git_branch=${8:-}
-    local git_dirty=${9:-}
-    local git_metadata_included=${10:-}
+    local target_type=$1
+    local target_name=$2
+    local backup_id=$3
+    local origin_path=$4
+    local archive_size=$5
+    local checksum=$6
+    local manifest_file=$7
+    local filter_mode=${8:-none}
+    local git_commit=${9:-}
+    local git_branch=${10:-}
+    local git_dirty=${11:-}
+    local git_metadata_included=${12:-false}
+    local created_at
 
-    {
-        cat <<EOF
-{
-  "nome_origem": "$item_name",
-  "versao": "v$version",
-  "maquina_origem": "$(hostname)",
-  "usuario": "$(whoami)",
-  "data_backup": "$(date --iso-8601=seconds)",
-  "caminho_original": "$origin_path",
-  "filter_mode": "$filter_mode",
-  "sha256": "$checksum"
-EOF
+    require_jq || return 1
 
-        if [[ "$filter_mode" == "gitignore" ]]; then
-            printf ',\n  "git_commit": '
-            if [[ -n "$git_commit" ]]; then
-                printf '"%s"' "$git_commit"
-            else
-                printf 'null'
-            fi
+    created_at=$(date --iso-8601=seconds)
 
-            printf ',\n  "git_branch": '
-            if [[ -n "$git_branch" ]]; then
-                printf '"%s"' "$git_branch"
-            else
-                printf 'null'
-            fi
+    jq -n \
+        --argjson schema_version "$MANIFEST_SCHEMA_VERSION" \
+        --arg backup_mode "full" \
+        --arg backup_id "$backup_id" \
+        --arg target_type "$target_type" \
+        --arg target_name "$target_name" \
+        --arg origin_path "$origin_path" \
+        --arg created_at "$created_at" \
+        --argjson archive_size "$archive_size" \
+        --arg sha256 "$checksum" \
+        --arg filter_mode "$filter_mode" \
+        --arg machine_origin "$(hostname)" \
+        --arg user "$(whoami)" \
+        --arg git_commit "$git_commit" \
+        --arg git_branch "$git_branch" \
+        --arg git_dirty "$git_dirty" \
+        --arg git_metadata_included "$git_metadata_included" \
+        '{
+          schema_version: $schema_version,
+          backup_mode: $backup_mode,
+          backup_id: $backup_id,
+          target_type: $target_type,
+          target_name: $target_name,
+          origin_path: $origin_path,
+          created_at: $created_at,
+          archive_size: $archive_size,
+          sha256: $sha256,
+          filter_mode: $filter_mode,
+          machine_origin: $machine_origin,
+          user: $user
+        }
+        + if $filter_mode == "gitignore" then {
+          git_commit: (if $git_commit == "" then null else $git_commit end),
+          git_branch: (if $git_branch == "" then null else $git_branch end),
+          git_dirty: (if $git_dirty == "true" then true elif $git_dirty == "false" then false else null end),
+          git_metadata_included: (if $git_metadata_included == "true" then true else false end)
+        } else {} end' > "$manifest_file"
+}
 
-            printf ',\n  "git_dirty": '
-            if [[ -n "$git_dirty" ]]; then
-                printf '%s' "$git_dirty"
-            else
-                printf 'null'
-            fi
+validate_manifest() {
+    local manifest_file=$1
 
-            printf ',\n  "git_metadata_included": %s' "$git_metadata_included"
+    require_jq || return 1
+
+    if [[ ! -s "$manifest_file" ]]; then
+        echo "ERRO: Manifesto ausente ou vazio."
+        return 1
+    fi
+
+    if ! jq -e '
+        .schema_version == 1 and
+        .backup_mode == "full" and
+        (.backup_id | type == "string" and length > 0) and
+        (.target_type | type == "string" and length > 0) and
+        (.target_name | type == "string" and length > 0) and
+        (.origin_path | type == "string" and length > 0) and
+        (.created_at | type == "string" and length > 0) and
+        (.archive_size | type == "number" and . >= 0) and
+        (.sha256 | type == "string" and length > 0)
+    ' "$manifest_file" >/dev/null; then
+        echo "ERRO: Manifesto inválido ou sem campos obrigatórios."
+        return 1
+    fi
+}
+
+manifest_field() {
+    local manifest_file=$1
+    local field=$2
+
+    jq -r ".$field" "$manifest_file"
+}
+
+validate_sha256_value() {
+    local checksum=$1
+
+    if [[ -z "$checksum" ]]; then
+        echo "ERRO: SHA256 esperado está vazio."
+        return 1
+    fi
+
+    if [[ ! "$checksum" =~ ^[0-9a-fA-F]{64}$ ]]; then
+        echo "ERRO: SHA256 esperado possui formato inválido."
+        return 1
+    fi
+}
+
+validate_archive_before_restore() {
+    local tar_file=$1
+    local entry
+    local link_target
+
+    if ! tar -tzf "$tar_file" >/dev/null; then
+        echo "ERRO: Arquivo compactado inválido ou malformado."
+        return 1
+    fi
+
+    while IFS= read -r entry; do
+        if [[ "$entry" == /* || "$entry" == *"/../"* || "$entry" == ../* || "$entry" == ".." || "$entry" == *"/.." ]]; then
+            echo "ERRO: Arquivo compactado contém caminho inseguro: $entry"
+            return 1
         fi
+    done < <(tar -tzf "$tar_file")
 
-        printf '\n}\n'
-    } > "$manifest_file"
+    while IFS= read -r entry; do
+        [[ "$entry" == *" -> "* ]] || continue
+        link_target=${entry##* -> }
+        if [[ "$link_target" == /* || "$link_target" == *"/../"* || "$link_target" == ../* || "$link_target" == ".." || "$link_target" == *"/.." ]]; then
+            echo "ERRO: Arquivo compactado contém link inseguro: $link_target"
+            return 1
+        fi
+    done < <(tar -tvzf "$tar_file")
+}
+
+rollback_created_target() {
+    local type=$1
+    local target_name=$2
+
+    if [[ "$type" == "volume" ]]; then
+        if ! docker volume rm "$target_name" >/dev/null 2>&1; then
+            echo "ERRO: Falha no rollback do volume Docker '$target_name'."
+            return 1
+        fi
+    elif [[ "$type" == "dir" ]]; then
+        if ! rm -rf -- "$target_name"; then
+            echo "ERRO: Falha no rollback do diretório '$target_name'."
+            return 1
+        fi
+    fi
 }
 
 create_gitignore_tar() {
@@ -227,6 +330,7 @@ do_backup() {
     local tar_file="$BACWUPS3_WORKSPACE/$tar_name"
     local manifest_file="$BACWUPS3_WORKSPACE/$manifest_name"
     local origin_path
+    local manifest_target_type
     local git_commit=""
     local git_branch=""
     local git_dirty=""
@@ -236,12 +340,14 @@ do_backup() {
 
     if [[ "$type" == "volume" ]]; then
         filter_mode="none"
+        manifest_target_type="volume"
         if ! docker run --rm -v "$target_name":/data -v "$BACWUPS3_WORKSPACE":/backup alpine tar -czf "/backup/$tar_name" -C /data .; then
             echo "ERRO: Falha ao compactar o volume Docker '$target_name'."
             return 1
         fi
         origin_path="docker_volume:$target_name"
     else
+        manifest_target_type="directory"
         if [[ "$filter_mode" == "gitignore" ]]; then
             if ! create_gitignore_tar "$target_name" "$tar_file"; then
                 rm -f "$tar_file" "$manifest_file"
@@ -261,6 +367,13 @@ do_backup() {
         origin_path="$target_name"
     fi
 
+    local archive_size
+    if ! archive_size=$(stat -c '%s' "$tar_file"); then
+        echo "ERRO: Não foi possível obter o tamanho do pacote de backup."
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
+
     local checksum
     if ! checksum=$(sha256sum "$tar_file" | awk '{print $1}'); then
         echo "ERRO: Não foi possível calcular o SHA256 do pacote de backup."
@@ -274,8 +387,18 @@ do_backup() {
         return 1
     fi
 
-    if ! generate_manifest "$target_name" "$next_v" "$origin_path" "$checksum" "$manifest_file" "$filter_mode" "$git_commit" "$git_branch" "$git_dirty" "$git_metadata_included"; then
+    if ! validate_sha256_value "$checksum"; then
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
+
+    if ! generate_manifest "$manifest_target_type" "$target_name" "${target_key}_v${next_v}" "$origin_path" "$archive_size" "$checksum" "$manifest_file" "$filter_mode" "$git_commit" "$git_branch" "$git_dirty" "$git_metadata_included"; then
         echo "ERRO: Falha ao gerar o manifesto do backup."
+        rm -f "$tar_file" "$manifest_file"
+        return 1
+    fi
+
+    if ! validate_manifest "$manifest_file"; then
         rm -f "$tar_file" "$manifest_file"
         return 1
     fi
@@ -301,6 +424,15 @@ do_restore() {
     local target_name=$2
     local s3_src_tar=$3
     local s3_src_manifest=${s3_src_tar/.tar.gz/.manifest.json}
+
+    local target_existed_before=false
+    if [[ "$type" == "volume" ]]; then
+        if docker volume inspect "$target_name" >/dev/null 2>&1; then
+            target_existed_before=true
+        fi
+    elif [[ -e "$target_name" ]]; then
+        target_existed_before=true
+    fi
 
     if check_target_exists "$type" "$target_name"; then
         echo "ERRO: O $type '$target_name' já existe e contém dados. Restauração abortada para evitar sobrescrita."
@@ -331,21 +463,40 @@ do_restore() {
         return 1
     fi
 
-    if [[ ! -s "$tmp_manifest" ]]; then
-        echo "ERRO: Manifesto ausente ou vazio após download."
+    if ! validate_manifest "$tmp_manifest"; then
+        echo "ERRO: Falha na validação do manifesto do backup."
         rm -f "$tmp_tar" "$tmp_manifest"
         return 1
     fi
 
     local expected_hash
-    if ! expected_hash=$(grep -oP '"sha256": "\K[^"]+' "$tmp_manifest"); then
+    if ! expected_hash=$(manifest_field "$tmp_manifest" "sha256"); then
         echo "ERRO: Não foi possível ler o SHA256 esperado no manifesto."
         rm -f "$tmp_tar" "$tmp_manifest"
         return 1
     fi
 
-    if [[ -z "$expected_hash" ]]; then
-        echo "ERRO: Manifesto não contém SHA256 esperado."
+    if ! validate_sha256_value "$expected_hash"; then
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
+    local expected_size
+    if ! expected_size=$(manifest_field "$tmp_manifest" "archive_size"); then
+        echo "ERRO: Não foi possível ler o tamanho esperado no manifesto."
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
+    local actual_size
+    if ! actual_size=$(stat -c '%s' "$tmp_tar"); then
+        echo "ERRO: Falha ao obter o tamanho do pacote baixado."
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
+    if [[ "$expected_size" != "$actual_size" ]]; then
+        echo "ERRO: Tamanho do pacote diverge do manifesto."
         rm -f "$tmp_tar" "$tmp_manifest"
         return 1
     fi
@@ -364,27 +515,42 @@ do_restore() {
     fi
     echo "Integridade confirmada (SHA256 validado)."
 
+    if ! validate_archive_before_restore "$tmp_tar"; then
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
     if [[ "$type" == "volume" ]]; then
+        local created_volume=false
         if ! docker volume create "$target_name"; then
             echo "ERRO: Falha ao criar o volume Docker de destino '$target_name'."
             rm -f "$tmp_tar" "$tmp_manifest"
             return 1
         fi
+        created_volume=true
 
         if ! docker run --rm -v "$target_name":/data -v "$BACWUPS3_WORKSPACE":/backup alpine tar -xzf "/backup/$(basename "$s3_src_tar")" -C /data; then
             echo "ERRO: Falha ao extrair o pacote para o volume Docker '$target_name'."
+            if [[ "$created_volume" == "true" && "$target_existed_before" == "false" ]]; then
+                rollback_created_target "$type" "$target_name" || true
+            fi
             rm -f "$tmp_tar" "$tmp_manifest"
             return 1
         fi
     else
+        local created_dir=false
         if ! mkdir -p "$target_name"; then
             echo "ERRO: Falha ao criar o diretório de destino '$target_name'."
             rm -f "$tmp_tar" "$tmp_manifest"
             return 1
         fi
+        [[ "$target_existed_before" == "false" ]] && created_dir=true
 
         if ! tar -xzf "$tmp_tar" -C "$target_name"; then
             echo "ERRO: Falha ao extrair o pacote para o diretório '$target_name'."
+            if [[ "$created_dir" == "true" ]]; then
+                rollback_created_target "$type" "$target_name" || true
+            fi
             rm -f "$tmp_tar" "$tmp_manifest"
             return 1
         fi

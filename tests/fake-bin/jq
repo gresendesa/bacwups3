@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+
+const fs = require("fs");
+
+function fail() {
+  process.exit(1);
+}
+
+function readJson(path) {
+  try {
+    return JSON.parse(fs.readFileSync(path, "utf8"));
+  } catch {
+    fail();
+  }
+}
+
+function isValidManifest(data) {
+  return data.schema_version === 1 &&
+    data.backup_mode === "full" &&
+    typeof data.backup_id === "string" && data.backup_id.length > 0 &&
+    typeof data.target_type === "string" && data.target_type.length > 0 &&
+    typeof data.target_name === "string" && data.target_name.length > 0 &&
+    typeof data.origin_path === "string" && data.origin_path.length > 0 &&
+    typeof data.created_at === "string" && data.created_at.length > 0 &&
+    typeof data.archive_size === "number" && data.archive_size >= 0 &&
+    typeof data.sha256 === "string" && data.sha256.length > 0;
+}
+
+const args = process.argv.slice(2);
+
+if (args[0] === "-n") {
+  const values = {};
+  let i = 1;
+
+  while (i < args.length) {
+    if (args[i] === "--arg") {
+      values[args[i + 1]] = args[i + 2];
+      i += 3;
+      continue;
+    }
+    if (args[i] === "--argjson") {
+      try {
+        values[args[i + 1]] = JSON.parse(args[i + 2]);
+      } catch {
+        fail();
+      }
+      i += 3;
+      continue;
+    }
+    break;
+  }
+
+  const manifest = {
+    schema_version: values.schema_version,
+    backup_mode: values.backup_mode,
+    backup_id: values.backup_id,
+    target_type: values.target_type,
+    target_name: values.target_name,
+    origin_path: values.origin_path,
+    created_at: values.created_at,
+    archive_size: values.archive_size,
+    sha256: values.sha256,
+    filter_mode: values.filter_mode,
+    machine_origin: values.machine_origin,
+    user: values.user,
+  };
+
+  if (values.filter_mode === "gitignore") {
+    manifest.git_commit = values.git_commit || null;
+    manifest.git_branch = values.git_branch || null;
+    manifest.git_dirty = values.git_dirty === "true" ? true : values.git_dirty === "false" ? false : null;
+    manifest.git_metadata_included = values.git_metadata_included === "true";
+  }
+
+  process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
+  process.exit(0);
+}
+
+if (args[0] === "-e") {
+  const file = args[args.length - 1];
+  process.exit(isValidManifest(readJson(file)) ? 0 : 1);
+}
+
+if (args[0] === "-r") {
+  const field = args[1].replace(/^\./, "");
+  const data = readJson(args[2]);
+  const value = data[field];
+  if (value === undefined || value === null) {
+    process.stdout.write("null\n");
+  } else {
+    process.stdout.write(`${value}\n`);
+  }
+  process.exit(0);
+}
+
+fail();

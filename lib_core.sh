@@ -7,6 +7,7 @@ set -Eeuo pipefail
 
 BACWUPS3_WORKSPACE=${BACWUPS3_WORKSPACE:-}
 MANIFEST_SCHEMA_VERSION=1
+DOCKER_BACKUP_IMAGE="alpine:3.20"
 
 init_temp_workspace() {
     if [[ -n "$BACWUPS3_WORKSPACE" && -d "$BACWUPS3_WORKSPACE" ]]; then
@@ -96,23 +97,48 @@ check_target_exists() {
     fi
 }
 
-get_next_version() {
-    local s3_base_path=$1
-    local item_name=$2
-    local s3_listing
-    local last_version
+generate_backup_id() {
+    local timestamp
+    local suffix
 
-    if ! s3_listing=$(aws s3 ls "$s3_base_path"); then
-        echo "ERRO: Falha ao consultar backups existentes em '$s3_base_path'." >&2
+    if [[ -n "${BACWUPS3_FIXED_BACKUP_ID:-}" ]]; then
+        echo "$BACWUPS3_FIXED_BACKUP_ID"
+        return 0
+    fi
+
+    timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+    suffix=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
+    printf '%s-%s\n' "$timestamp" "$suffix"
+}
+
+s3_object_uri() {
+    local s3_base_path=$1
+    local object_name=$2
+
+    printf '%s/%s\n' "${s3_base_path%/}" "$object_name"
+}
+
+ensure_s3_object_absent() {
+    local s3_uri=$1
+    local listing
+
+    if ! listing=$(aws s3 ls "$s3_uri" 2>/dev/null); then
+        echo "ERRO: Falha ao verificar objeto remoto '$s3_uri'."
         return 1
     fi
 
-    last_version=$(printf '%s\n' "$s3_listing" | grep -oP "${item_name}_v\K\d+(?=\.tar\.gz)" | sort -n | tail -1 || true)
-    
-    if [[ -z "$last_version" ]]; then
-        echo "1"
-    else
-        echo $((last_version + 1))
+    if [[ -n "$listing" ]]; then
+        echo "ERRO: Objeto remoto já existe e não será sobrescrito: $s3_uri"
+        return 1
+    fi
+}
+
+remove_remote_object() {
+    local s3_uri=$1
+
+    if ! aws s3 rm "$s3_uri" >/dev/null 2>&1; then
+        echo "ERRO: Falha ao remover objeto remoto incompleto: $s3_uri"
+        return 1
     fi
 }
 
@@ -321,14 +347,15 @@ do_backup() {
 
     init_temp_workspace
 
-    local next_v
-    if ! next_v=$(get_next_version "$s3_dest" "$target_key"); then
-        return 1
-    fi
-    local tar_name="${target_key}_v${next_v}.tar.gz"
-    local manifest_name="${target_key}_v${next_v}.manifest.json"
+    local backup_id
+    backup_id=$(generate_backup_id)
+
+    local tar_name="${target_key}_${backup_id}.tar.gz"
+    local manifest_name="${target_key}_${backup_id}.manifest.json"
     local tar_file="$BACWUPS3_WORKSPACE/$tar_name"
     local manifest_file="$BACWUPS3_WORKSPACE/$manifest_name"
+    local s3_tar_uri
+    local s3_manifest_uri
     local origin_path
     local manifest_target_type
     local git_commit=""
@@ -336,12 +363,19 @@ do_backup() {
     local git_dirty=""
     local git_metadata_included=""
 
-    echo "Iniciando backup da versão v${next_v}..."
+    s3_tar_uri=$(s3_object_uri "$s3_dest" "$tar_name")
+    s3_manifest_uri=$(s3_object_uri "$s3_dest" "$manifest_name")
+
+    if ! ensure_s3_object_absent "$s3_tar_uri" || ! ensure_s3_object_absent "$s3_manifest_uri"; then
+        return 1
+    fi
+
+    echo "Iniciando backup $backup_id..."
 
     if [[ "$type" == "volume" ]]; then
         filter_mode="none"
         manifest_target_type="volume"
-        if ! docker run --rm -v "$target_name":/data -v "$BACWUPS3_WORKSPACE":/backup alpine tar -czf "/backup/$tar_name" -C /data .; then
+        if ! docker run --rm -v "$target_name":/data:ro -v "$BACWUPS3_WORKSPACE":/backup "$DOCKER_BACKUP_IMAGE" tar -czf "/backup/$tar_name" -C /data .; then
             echo "ERRO: Falha ao compactar o volume Docker '$target_name'."
             return 1
         fi
@@ -392,7 +426,7 @@ do_backup() {
         return 1
     fi
 
-    if ! generate_manifest "$manifest_target_type" "$target_name" "${target_key}_v${next_v}" "$origin_path" "$archive_size" "$checksum" "$manifest_file" "$filter_mode" "$git_commit" "$git_branch" "$git_dirty" "$git_metadata_included"; then
+    if ! generate_manifest "$manifest_target_type" "$target_name" "${target_key}_${backup_id}" "$origin_path" "$archive_size" "$checksum" "$manifest_file" "$filter_mode" "$git_commit" "$git_branch" "$git_dirty" "$git_metadata_included"; then
         echo "ERRO: Falha ao gerar o manifesto do backup."
         rm -f "$tar_file" "$manifest_file"
         return 1
@@ -403,14 +437,15 @@ do_backup() {
         return 1
     fi
 
-    if ! aws s3 cp "$tar_file" "$s3_dest"; then
+    if ! aws s3 cp "$tar_file" "$s3_tar_uri"; then
         echo "ERRO: Falha no upload do arquivo de backup para o S3."
         rm -f "$tar_file" "$manifest_file"
         return 1
     fi
 
-    if ! aws s3 cp "$manifest_file" "$s3_dest"; then
+    if ! aws s3 cp "$manifest_file" "$s3_manifest_uri"; then
         echo "ERRO: Falha no upload do manifesto para o S3."
+        remove_remote_object "$s3_tar_uri" || true
         rm -f "$tar_file" "$manifest_file"
         return 1
     fi
@@ -529,7 +564,7 @@ do_restore() {
         fi
         created_volume=true
 
-        if ! docker run --rm -v "$target_name":/data -v "$BACWUPS3_WORKSPACE":/backup alpine tar -xzf "/backup/$(basename "$s3_src_tar")" -C /data; then
+        if ! docker run --rm -v "$target_name":/data -v "$BACWUPS3_WORKSPACE":/backup "$DOCKER_BACKUP_IMAGE" tar -xzf "/backup/$(basename "$s3_src_tar")" -C /data; then
             echo "ERRO: Falha ao extrair o pacote para o volume Docker '$target_name'."
             if [[ "$created_volume" == "true" && "$target_existed_before" == "false" ]]; then
                 rollback_created_target "$type" "$target_name" || true

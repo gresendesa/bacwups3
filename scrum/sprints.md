@@ -70,6 +70,7 @@ updated_at: 2026-07-13
 sprints:
   - SPR-2026-01
   - SPR-2026-02
+  - SPR-2026-03
 tags: [sprints, registry]
 ```
 
@@ -108,6 +109,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: SPR-2026-02 details](sprints/SPR-2026-02.md#sprint.SPR-2026-02)
+
+### SPR-2026-03 - Backup único e Docker mais seguro
+
+```yaml
+section: sprints.SPR-2026-03
+sprint_id: SPR-2026-03
+title: Backup único e Docker mais seguro
+status: done
+focus: Substituir versionamento sequencial por IDs únicos, evitar uploads órfãos e endurecer backup de volumes Docker.
+po_priority_summary: B-009 e B-010 possuem PO Priority 2.
+sprint_risk: medium
+detail_file: scrum/sprints/SPR-2026-03.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-03 details](sprints/SPR-2026-03.md#sprint.SPR-2026-03)
 
 ### SPR-YYYY-NN Template
 

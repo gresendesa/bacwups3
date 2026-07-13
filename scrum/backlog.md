@@ -132,6 +132,8 @@ items:
   - B-006
   - B-007
   - B-008
+  - B-009
+  - B-010
 tags: [backlog, done]
 ```
 
@@ -279,6 +281,42 @@ updated_at: 2026-07-13
 
 [@ref: B-008 details](backlog/B-008.md#backlog.item.B-008)
 
+### B-009 - Evitar colisões e uploads incompletos
+
+```yaml
+section: backlog.item.B-009.done
+id: B-009
+title: Evitar colisões e uploads incompletos
+status: done
+po_priority: 2
+risk: medium
+detail_file: scrum/backlog/B-009.md
+linked_sprint: SPR-2026-03
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-009 details](backlog/B-009.md#backlog.item.B-009)
+
+### B-010 - Tornar o backup de volumes Docker mais seguro
+
+```yaml
+section: backlog.item.B-010.done
+id: B-010
+title: Tornar o backup de volumes Docker mais seguro
+status: done
+po_priority: 2
+risk: low
+detail_file: scrum/backlog/B-010.md
+linked_sprint: SPR-2026-03
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-010 details](backlog/B-010.md#backlog.item.B-010)
+
 ### Pending
 
 ```yaml
@@ -290,8 +328,6 @@ created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: pending
 items:
-  - B-009
-  - B-010
   - B-011
   - B-012
   - B-013
@@ -366,40 +402,6 @@ updated_at: 2026-07-13
 ```
 
 [@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
-
-### B-009 - Evitar colisoes e uploads incompletos
-
-```yaml
-section: backlog.item.B-009
-id: B-009
-title: Evitar colisoes e uploads incompletos
-status: todo
-po_priority: 2
-risk: medium
-detail_file: scrum/backlog/B-009.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-009 details](backlog/B-009.md#backlog.item.B-009)
-
-### B-010 - Tornar o backup de volumes Docker mais seguro
-
-```yaml
-section: backlog.item.B-010
-id: B-010
-title: Tornar o backup de volumes Docker mais seguro
-status: todo
-po_priority: 2
-risk: low
-detail_file: scrum/backlog/B-010.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-010 details](backlog/B-010.md#backlog.item.B-010)
 
 ### B-011 - Adicionar backup de projeto respeitando .gitignore
 

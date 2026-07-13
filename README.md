@@ -8,7 +8,7 @@ Ferramenta interativa de linha de comando (CLI) desenvolvida em Shell Script (Ba
 * **Suporte a Múltiplos Alvos:** Realiza backup e restore tanto de **volumes gerenciados pelo Docker** quanto de **diretórios arbitrários** do sistema hospedeiro.
 * **Modos de Backup de Diretório:** Diretórios locais podem ser empacotados por completo ou como **Projeto Git**, respeitando automaticamente `.gitignore`, `.git/info/exclude` e excludes globais configurados no Git.
 * **Empacotamento Eficiente:** Todos os dados são obrigatoriamente compactados em um arquivo único no formato `.tar.gz`. A sincronização de arquivos soltos (`aws s3 sync`) não é utilizada.
-* **Backup completo versionado:** Cada execução gera um pacote `.tar.gz` completo e independente, com sufixo de versão sequencial (ex: `v1`, `v2`, `v3`) para preservar histórico no S3.
+* **Backup completo versionado:** Cada execução gera um pacote `.tar.gz` completo e independente, com ID único temporal (ex: `20260712T184231Z-a94f10d2`) para preservar histórico no S3 sem sobrescrita silenciosa.
 
 ## Segurança e Integridade
 

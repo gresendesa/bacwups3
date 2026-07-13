@@ -28,8 +28,22 @@ assert_file_absent() {
     [[ ! -e "$1" ]] || fail "arquivo inesperado presente: $1"
 }
 
+single_match() {
+    local pattern=$1
+    local matches=()
+
+    shopt -s nullglob
+    matches=($pattern)
+    shopt -u nullglob
+
+    [[ ${#matches[@]} -eq 1 ]] || fail "esperado exatamente um arquivo para padrão: $pattern"
+    printf '%s\n' "${matches[0]}"
+}
+
 aws() {
     if [[ "$1" == "s3" && "$2" == "ls" ]]; then
+        local object="$MOCK_S3/$(basename "$3")"
+        [[ -f "$object" ]] && printf '2026-07-13 00:00:00 %s %s\n' "$(stat -c '%s' "$object")" "$(basename "$object")"
         return 0
     fi
 
@@ -86,8 +100,13 @@ test_gitignore_backup_contents() {
 
     do_backup "dir" "$repo" "project" "s3://bucket/backups/" "gitignore" >/dev/null
 
+    local backup_tar
+    local manifest
+    backup_tar=$(single_match "$MOCK_S3/project_*.tar.gz")
+    manifest=$(single_match "$MOCK_S3/project_*.manifest.json")
+
     mkdir -p "$extract_dir"
-    tar -xzf "$MOCK_S3/project_v1.tar.gz" -C "$extract_dir"
+    tar -xzf "$backup_tar" -C "$extract_dir"
 
     assert_file_exists "$extract_dir/.gitignore"
     assert_file_exists "$extract_dir/nested/.gitignore"
@@ -105,11 +124,11 @@ break.txt"
     assert_file_absent "$extract_dir/info-excluded.txt"
     assert_file_absent "$extract_dir/.git"
 
-    grep -q '"filter_mode": "gitignore"' "$MOCK_S3/project_v1.manifest.json"
-    grep -q '"git_metadata_included": false' "$MOCK_S3/project_v1.manifest.json"
-    grep -q '"git_commit": "' "$MOCK_S3/project_v1.manifest.json"
-    grep -q '"git_dirty": true' "$MOCK_S3/project_v1.manifest.json"
-    grep -q '"backup_mode": "full"' "$MOCK_S3/project_v1.manifest.json"
+    grep -q '"filter_mode": "gitignore"' "$manifest"
+    grep -q '"git_metadata_included": false' "$manifest"
+    grep -q '"git_commit": "' "$manifest"
+    grep -q '"git_dirty": true' "$manifest"
+    grep -q '"backup_mode": "full"' "$manifest"
 }
 
 test_normal_directory_filter_mode() {
@@ -120,7 +139,9 @@ test_normal_directory_filter_mode() {
 
     do_backup "dir" "$dir" "normal" "s3://bucket/backups/" "none" >/dev/null
 
-    grep -q '"filter_mode": "none"' "$MOCK_S3/normal_v1.manifest.json"
+    local manifest
+    manifest=$(single_match "$MOCK_S3/normal_*.manifest.json")
+    grep -q '"filter_mode": "none"' "$manifest"
 }
 
 test_git_mode_outside_repository_fails() {
@@ -132,7 +153,10 @@ test_git_mode_outside_repository_fails() {
         fail "modo Git deveria falhar fora de um repositório"
     fi
 
-    assert_file_absent "$MOCK_S3/notrepo_v1.tar.gz"
+    shopt -s nullglob
+    local files=("$MOCK_S3"/notrepo_*.tar.gz)
+    shopt -u nullglob
+    [[ ${#files[@]} -eq 0 ]] || fail "modo Git não deveria gerar pacote"
 }
 
 test_gitignore_backup_contents

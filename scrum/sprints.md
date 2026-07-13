@@ -154,7 +154,7 @@ updated_at: 2026-07-13
 section: sprints.SPR-2026-05
 sprint_id: SPR-2026-05
 title: Verificação e automação essencial
-status: planned
+status: done
 focus: Adicionar verificação de backup sem restore e consolidar execução local dos testes essenciais.
 po_priority_summary: B-013 e B-014 possuem PO Priority 4.
 sprint_risk: medium

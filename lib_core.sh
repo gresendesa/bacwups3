@@ -274,6 +274,74 @@ validate_archive_before_restore() {
     done < <(tar -tvzf "$tar_file")
 }
 
+validate_downloaded_backup() {
+    local tmp_tar=$1
+    local tmp_manifest=$2
+
+    if [[ ! -s "$tmp_tar" ]]; then
+        echo "ERRO: Pacote de backup ausente ou vazio após download."
+        return 1
+    fi
+
+    if ! validate_manifest "$tmp_manifest"; then
+        echo "ERRO: Falha na validação do manifesto do backup."
+        return 1
+    fi
+
+    local expected_hash
+    if ! expected_hash=$(manifest_field "$tmp_manifest" "sha256"); then
+        echo "ERRO: Não foi possível ler o SHA256 esperado no manifesto."
+        return 1
+    fi
+
+    if ! validate_sha256_value "$expected_hash"; then
+        return 1
+    fi
+
+    local expected_size
+    if ! expected_size=$(manifest_field "$tmp_manifest" "archive_size"); then
+        echo "ERRO: Não foi possível ler o tamanho esperado no manifesto."
+        return 1
+    fi
+
+    local actual_size
+    if ! actual_size=$(stat -c '%s' "$tmp_tar"); then
+        echo "ERRO: Falha ao obter o tamanho do pacote baixado."
+        return 1
+    fi
+
+    if [[ "$expected_size" != "$actual_size" ]]; then
+        echo "ERRO: Tamanho do pacote diverge do manifesto."
+        rm -f "$tmp_tar"
+        return 1
+    fi
+
+    local actual_hash
+    if ! actual_hash=$(sha256sum "$tmp_tar" | awk '{print $1}'); then
+        echo "ERRO: Falha ao calcular o SHA256 do pacote baixado."
+        rm -f "$tmp_tar"
+        return 1
+    fi
+
+    if [[ -z "$actual_hash" ]]; then
+        echo "ERRO: SHA256 calculado está vazio."
+        rm -f "$tmp_tar"
+        return 1
+    fi
+
+    if [[ "$expected_hash" != "$actual_hash" ]]; then
+        echo "ERRO CRÍTICO: Falha na verificação SHA256! O arquivo foi corrompido. Abortando."
+        rm -f "$tmp_tar"
+        return 1
+    fi
+    echo "Integridade confirmada (SHA256 validado)."
+
+    if ! validate_archive_before_restore "$tmp_tar"; then
+        rm -f "$tmp_tar"
+        return 1
+    fi
+}
+
 rollback_created_target() {
     local type=$1
     local target_name=$2
@@ -486,71 +554,13 @@ do_restore() {
         return 1
     fi
 
-    if [[ ! -s "$tmp_tar" ]]; then
-        echo "ERRO: Pacote de backup ausente ou vazio após download."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
     if ! aws s3 cp "$s3_src_manifest" "$tmp_manifest"; then
         echo "ERRO: Falha no download do manifesto do backup."
         rm -f "$tmp_tar" "$tmp_manifest"
         return 1
     fi
 
-    if ! validate_manifest "$tmp_manifest"; then
-        echo "ERRO: Falha na validação do manifesto do backup."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    local expected_hash
-    if ! expected_hash=$(manifest_field "$tmp_manifest" "sha256"); then
-        echo "ERRO: Não foi possível ler o SHA256 esperado no manifesto."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    if ! validate_sha256_value "$expected_hash"; then
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    local expected_size
-    if ! expected_size=$(manifest_field "$tmp_manifest" "archive_size"); then
-        echo "ERRO: Não foi possível ler o tamanho esperado no manifesto."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    local actual_size
-    if ! actual_size=$(stat -c '%s' "$tmp_tar"); then
-        echo "ERRO: Falha ao obter o tamanho do pacote baixado."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    if [[ "$expected_size" != "$actual_size" ]]; then
-        echo "ERRO: Tamanho do pacote diverge do manifesto."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    local actual_hash
-    if ! actual_hash=$(sha256sum "$tmp_tar" | awk '{print $1}'); then
-        echo "ERRO: Falha ao calcular o SHA256 do pacote baixado."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-
-    if [[ "$expected_hash" != "$actual_hash" ]]; then
-        echo "ERRO CRÍTICO: Falha na verificação SHA256! O arquivo foi corrompido. Abortando."
-        rm -f "$tmp_tar" "$tmp_manifest"
-        return 1
-    fi
-    echo "Integridade confirmada (SHA256 validado)."
-
-    if ! validate_archive_before_restore "$tmp_tar"; then
+    if ! validate_downloaded_backup "$tmp_tar" "$tmp_manifest"; then
         rm -f "$tmp_tar" "$tmp_manifest"
         return 1
     fi
@@ -593,4 +603,35 @@ do_restore() {
 
     rm -f "$tmp_tar" "$tmp_manifest"
     echo "Restauração concluída com sucesso!"
+}
+
+do_verify_backup() {
+    local s3_src_tar=$1
+    local s3_src_manifest=${s3_src_tar/.tar.gz/.manifest.json}
+
+    init_temp_workspace
+
+    local tmp_tar="$BACWUPS3_WORKSPACE/$(basename "$s3_src_tar")"
+    local tmp_manifest="$BACWUPS3_WORKSPACE/$(basename "$s3_src_manifest")"
+
+    echo "Baixando arquivos do S3 para verificação..."
+    if ! aws s3 cp "$s3_src_tar" "$tmp_tar"; then
+        echo "ERRO: Falha no download do pacote de backup."
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
+    if ! aws s3 cp "$s3_src_manifest" "$tmp_manifest"; then
+        echo "ERRO: Falha no download do manifesto do backup."
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
+    if ! validate_downloaded_backup "$tmp_tar" "$tmp_manifest"; then
+        rm -f "$tmp_tar" "$tmp_manifest"
+        return 1
+    fi
+
+    rm -f "$tmp_tar" "$tmp_manifest"
+    echo "Verificação concluída com sucesso. Nenhum dado foi restaurado."
 }

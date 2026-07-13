@@ -18,6 +18,7 @@ Ferramenta interativa de linha de comando (CLI) desenvolvida em Shell Script (Ba
   * O hash SHA256 do arquivo `.tar.gz` é calculado no momento do upload e gravado no manifesto.
   * No momento do download, o script recalcula o hash do pacote recebido e o cruza com o valor do manifesto para atestar a integridade. 
   * Em caso de divergência, o arquivo corrompido é sumariamente apagado e a extração é bloqueada.
+* **Verificação sem Restore:** A TUI permite baixar manifesto e pacote, validar SHA256 e inspecionar a estrutura do `.tar.gz` sem criar volume ou diretório de destino.
 * **Execução Segura:** A ferramenta atua de forma passiva em relação aos serviços; ela emite avisos, mas não pausa contêineres automaticamente. O controle de concorrência é delegado ao administrador.
 
 ## Pré-requisitos
@@ -44,7 +45,7 @@ chmod +x bacwups3.sh
 ```bash
 ./bacwups3.sh
 ```
-4. Siga as instruções em tela para selecionar a operação (Backup/Restore), o tipo de alvo (Volume/Diretório), o nome/caminho e a URI do bucket S3.
+4. Siga as instruções em tela para selecionar a operação (Backup/Restore/Verify), o tipo de alvo quando aplicável, o nome/caminho e a URI do bucket S3.
 
 ## Modos de Backup de Diretório
 
@@ -54,3 +55,13 @@ Ao selecionar um diretório para backup, a TUI oferece dois modos:
 * **Projeto Git, respeitando .gitignore:** o diretório precisa pertencer a um repositório Git. A seleção de arquivos é feita com `git ls-files --cached --others --exclude-standard -z`, incluindo arquivos rastreados e arquivos não rastreados não ignorados. O pacote exclui o diretório `.git` e respeita `.gitignore` da raiz, `.gitignore` em subdiretórios, `.git/info/exclude`, excludes globais e regras de reinclusão com `!`.
 
 No modo Git, o manifesto registra `"filter_mode": "gitignore"`, commit, branch, estado dirty e `"git_metadata_included": false`. O backup gerado continua sendo um `.tar.gz` completo e independente.
+
+## Testes locais
+
+Execute a suíte essencial com um único comando:
+
+```bash
+bash tests/run_all.sh
+```
+
+Os testes usam mocks locais para AWS e Docker, não exigem uma conta AWS real e validam o bundle gerado com `bash -n`. Quando `shellcheck` estiver instalado, o mesmo comando também executa a análise estática.

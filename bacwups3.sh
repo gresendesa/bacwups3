@@ -36,71 +36,75 @@ main_loop() {
             $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
             "BACKUP" "Enviar dados para o S3" \
             "RESTORE" "Recuperar dados do S3" \
+            "VERIFY" "Verificar backup sem restaurar" \
             "SAIR" "Sair da aplicação" 3>&1 1>&2 2>&3); then
             break
         fi
         
         [[ "$ACTION" == "SAIR" ]] && break
 
-        local TARGET_TYPE
-        if ! TARGET_TYPE=$(whiptail --title "Tipo de Alvo" --menu "Escolha o tipo de dado:" \
-            $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
-            "volume" "Volume Docker" \
-            "dir" "Diretório Local" 3>&1 1>&2 2>&3); then
-            continue
-        fi
-
-        local TARGET_NAME
-        if [[ "$ACTION" == "BACKUP" ]]; then
-            if [[ "$TARGET_TYPE" == "volume" ]]; then
-                local AVAILABLE_VOLUMES
-                while true; do
-                    if ! AVAILABLE_VOLUMES=$(list_docker_volumes); then
-                        whiptail --title "Erro Docker" --msgbox \
-"Não foi possível executar 'docker volume ls'.\n\nVerifique se o Docker está instalado e se o daemon está em execução." \
-                        $WT_HEIGHT $WT_WIDTH
-                        continue 2
-                    fi
-
-                    local volume_select_status=0
-                    TARGET_NAME=$(select_docker_volume "$AVAILABLE_VOLUMES") || volume_select_status=$?
-
-                    if [[ $volume_select_status -eq 2 ]]; then
-                        continue
-                    fi
-
-                    [[ $volume_select_status -ne 0 || -z "$TARGET_NAME" ]] && continue 2
-                    break
-                done
-            else
-                if ! TARGET_NAME=$(select_directory "$HOME"); then
-                    continue
-                fi
-            fi
-        else
-            if [[ "$TARGET_TYPE" == "volume" ]]; then
-                if ! TARGET_NAME=$(get_input "Volume de Destino" "Digite o nome do volume Docker de destino (novo):" ""); then
-                    continue
-                fi
-            else
-                if ! TARGET_NAME=$(select_restore_directory "$HOME"); then
-                    continue
-                fi
-            fi
-        fi
-
-        [[ -z "$TARGET_NAME" ]] && continue
-
+        local TARGET_TYPE=""
+        local TARGET_NAME=""
+        local TARGET_KEY=""
         local FILTER_MODE="none"
-        if [[ "$ACTION" == "BACKUP" && "$TARGET_TYPE" == "dir" ]]; then
-            if ! FILTER_MODE=$(select_directory_backup_mode); then
+
+        if [[ "$ACTION" == "BACKUP" || "$ACTION" == "RESTORE" ]]; then
+            if ! TARGET_TYPE=$(whiptail --title "Tipo de Alvo" --menu "Escolha o tipo de dado:" \
+                $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+                "volume" "Volume Docker" \
+                "dir" "Diretório Local" 3>&1 1>&2 2>&3); then
                 continue
             fi
-            [[ -z "$FILTER_MODE" ]] && continue
-        fi
 
-        local TARGET_KEY
-        TARGET_KEY=$(build_target_key "$TARGET_TYPE" "$TARGET_NAME")
+            if [[ "$ACTION" == "BACKUP" ]]; then
+                if [[ "$TARGET_TYPE" == "volume" ]]; then
+                    local AVAILABLE_VOLUMES
+                    while true; do
+                        if ! AVAILABLE_VOLUMES=$(list_docker_volumes); then
+                            whiptail --title "Erro Docker" --msgbox \
+"Não foi possível executar 'docker volume ls'.\n\nVerifique se o Docker está instalado e se o daemon está em execução." \
+                            $WT_HEIGHT $WT_WIDTH
+                            continue 2
+                        fi
+
+                        local volume_select_status=0
+                        TARGET_NAME=$(select_docker_volume "$AVAILABLE_VOLUMES") || volume_select_status=$?
+
+                        if [[ $volume_select_status -eq 2 ]]; then
+                            continue
+                        fi
+
+                        [[ $volume_select_status -ne 0 || -z "$TARGET_NAME" ]] && continue 2
+                        break
+                    done
+                else
+                    if ! TARGET_NAME=$(select_directory "$HOME"); then
+                        continue
+                    fi
+                fi
+            else
+                if [[ "$TARGET_TYPE" == "volume" ]]; then
+                    if ! TARGET_NAME=$(get_input "Volume de Destino" "Digite o nome do volume Docker de destino (novo):" ""); then
+                        continue
+                    fi
+                else
+                    if ! TARGET_NAME=$(select_restore_directory "$HOME"); then
+                        continue
+                    fi
+                fi
+            fi
+
+            [[ -z "$TARGET_NAME" ]] && continue
+
+            if [[ "$ACTION" == "BACKUP" && "$TARGET_TYPE" == "dir" ]]; then
+                if ! FILTER_MODE=$(select_directory_backup_mode); then
+                    continue
+                fi
+                [[ -z "$FILTER_MODE" ]] && continue
+            fi
+
+            TARGET_KEY=$(build_target_key "$TARGET_TYPE" "$TARGET_NAME")
+        fi
 
         local S3_PATH
         while true; do
@@ -169,6 +173,20 @@ main_loop() {
             echo "Iniciando processo de Restauração..."
             if ! do_restore "$TARGET_TYPE" "$TARGET_NAME" "$S3_TARGET_FILE"; then
                 echo "Restauração não concluída."
+            fi
+            read -r -p "Pressione [ENTER] para voltar ao menu..." || true
+
+        elif [[ "$ACTION" == "VERIFY" ]]; then
+            local S3_TARGET_FILE
+            if ! S3_TARGET_FILE=$(select_s3_backup_file "$S3_PATH"); then
+                continue
+            fi
+            [[ -z "$S3_TARGET_FILE" ]] && continue
+
+            clear
+            echo "Iniciando verificação do backup..."
+            if ! do_verify_backup "$S3_TARGET_FILE"; then
+                echo "Verificação não concluída."
             fi
             read -r -p "Pressione [ENTER] para voltar ao menu..." || true
         fi

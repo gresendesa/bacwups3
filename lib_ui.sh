@@ -198,7 +198,7 @@ select_s3_path() {
     local bucket_prompt="Selecione o bucket de destino:"
     local prefix_prompt="Informe um prefixo/pasta de destino (opcional). Ex: backups/projeto"
 
-    if [[ "$mode" == "restore" || "$mode" == "RESTORE" ]]; then
+    if [[ "$mode" == "restore" || "$mode" == "RESTORE" || "$mode" == "verify" || "$mode" == "VERIFY" ]]; then
         title="Origem S3"
         bucket_prompt="Selecione o bucket onde o backup está armazenado:"
         prefix_prompt="Informe o prefixo/pasta onde o backup está armazenado (opcional). Ex: backups/projeto"
@@ -282,7 +282,7 @@ select_s3_backup_file() {
     done
 
     local selected_file
-    if ! selected_file=$(whiptail --title "Selecionar Backup" --menu "Escolha o arquivo de backup para restaurar:" \
+    if ! selected_file=$(whiptail --title "Selecionar Backup" --menu "Escolha o arquivo de backup:" \
         $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
         return 1
     fi

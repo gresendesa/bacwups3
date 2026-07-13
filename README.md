@@ -93,3 +93,11 @@ bash tests/run_all.sh
 ```
 
 Os testes usam mocks locais para AWS e Docker, não exigem uma conta AWS real e validam o bundle gerado com `bash -n`. Quando `shellcheck` estiver instalado, o mesmo comando também executa a análise estática.
+
+Para executar também o teste de integração real de volumes Docker:
+
+```bash
+BACWUPS3_RUN_DOCKER_INTEGRATION=1 bash tests/run_all.sh
+```
+
+Esse teste cria volumes Docker temporários, valida backup/restore real de volume e remove os volumes ao final.

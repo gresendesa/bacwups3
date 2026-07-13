@@ -190,7 +190,7 @@ updated_at: 2026-07-13
 section: sprints.SPR-2026-07
 sprint_id: SPR-2026-07
 title: Integração real de volumes Docker
-status: planned
+status: done
 focus: Adicionar teste de integração real para backup e restore de volumes Docker.
 po_priority_summary: B-017 possui PO Priority 2.
 sprint_risk: high

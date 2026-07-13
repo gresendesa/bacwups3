@@ -28,4 +28,10 @@ else
     echo "SKIP: bats não instalado."
 fi
 
+if [[ "${BACWUPS3_RUN_DOCKER_INTEGRATION:-}" == "1" ]]; then
+    bash tests/docker_volume_integration_test.sh
+else
+    echo "SKIP: integração Docker real desabilitada (BACWUPS3_RUN_DOCKER_INTEGRATION=1)."
+fi
+
 echo "OK: tests/run_all.sh"

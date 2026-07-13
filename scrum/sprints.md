@@ -72,6 +72,7 @@ sprints:
   - SPR-2026-02
   - SPR-2026-03
   - SPR-2026-04
+  - SPR-2026-05
 tags: [sprints, registry]
 ```
 
@@ -146,6 +147,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: SPR-2026-04 details](sprints/SPR-2026-04.md#sprint.SPR-2026-04)
+
+### SPR-2026-05 - Verificação e automação essencial
+
+```yaml
+section: sprints.SPR-2026-05
+sprint_id: SPR-2026-05
+title: Verificação e automação essencial
+status: planned
+focus: Adicionar verificação de backup sem restore e consolidar execução local dos testes essenciais.
+po_priority_summary: B-013 e B-014 possuem PO Priority 4.
+sprint_risk: medium
+detail_file: scrum/sprints/SPR-2026-05.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-05 details](sprints/SPR-2026-05.md#sprint.SPR-2026-05)
 
 ### SPR-YYYY-NN Template
 

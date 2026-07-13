@@ -365,9 +365,7 @@ owner: "gresendesa"
 created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: pending
-items:
-  - B-013
-  - B-014
+items: []
 tags: [backlog, pending]
 ```
 
@@ -439,39 +437,7 @@ updated_at: 2026-07-13
 
 [@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
 
-### B-013 - Adicionar verificacao de backup sem restaurar
-
-```yaml
-section: backlog.item.B-013
-id: B-013
-title: Adicionar verificacao de backup sem restaurar
-status: todo
-po_priority: 4
-risk: medium
-detail_file: scrum/backlog/B-013.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-013 details](backlog/B-013.md#backlog.item.B-013)
-
-### B-014 - Adicionar testes automatizados essenciais
-
-```yaml
-section: backlog.item.B-014
-id: B-014
-title: Adicionar testes automatizados essenciais
-status: todo
-po_priority: 4
-risk: medium
-detail_file: scrum/backlog/B-014.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-014 details](backlog/B-014.md#backlog.item.B-014)
+No items registered.
 
 ### Planned
 
@@ -483,11 +449,47 @@ owner: "gresendesa"
 created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: planned
-items: []
+items:
+  - B-013
+  - B-014
 tags: [backlog, planned]
 ```
 
-No items registered.
+### B-013 - Adicionar verificação de backup sem restaurar
+
+```yaml
+section: backlog.item.B-013.planned
+id: B-013
+title: Adicionar verificação de backup sem restaurar
+status: planned
+po_priority: 4
+risk: medium
+detail_file: scrum/backlog/B-013.md
+linked_sprint: SPR-2026-05
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-013 details](backlog/B-013.md#backlog.item.B-013)
+
+### B-014 - Adicionar testes automatizados essenciais
+
+```yaml
+section: backlog.item.B-014.planned
+id: B-014
+title: Adicionar testes automatizados essenciais
+status: planned
+po_priority: 4
+risk: medium
+detail_file: scrum/backlog/B-014.md
+linked_sprint: SPR-2026-05
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-014 details](backlog/B-014.md#backlog.item.B-014)
 
 ### Doing
 

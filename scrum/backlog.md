@@ -214,10 +214,6 @@ created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: pending
 items:
-  - B-005
-  - B-006
-  - B-007
-  - B-008
   - B-009
   - B-010
   - B-011
@@ -294,74 +290,6 @@ updated_at: 2026-07-13
 ```
 
 [@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
-
-### B-005 - Gerar e validar o manifesto com JSON seguro
-
-```yaml
-section: backlog.item.B-005
-id: B-005
-title: Gerar e validar o manifesto com JSON seguro
-status: todo
-po_priority: 1
-risk: medium
-detail_file: scrum/backlog/B-005.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-005 details](backlog/B-005.md#backlog.item.B-005)
-
-### B-006 - Fortalecer a validacao de integridade
-
-```yaml
-section: backlog.item.B-006
-id: B-006
-title: Fortalecer a validacao de integridade
-status: todo
-po_priority: 1
-risk: medium
-detail_file: scrum/backlog/B-006.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-006 details](backlog/B-006.md#backlog.item.B-006)
-
-### B-007 - Validar o arquivo compactado antes da extracao
-
-```yaml
-section: backlog.item.B-007
-id: B-007
-title: Validar o arquivo compactado antes da extracao
-status: todo
-po_priority: 1
-risk: high
-detail_file: scrum/backlog/B-007.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-007 details](backlog/B-007.md#backlog.item.B-007)
-
-### B-008 - Implementar rollback de restore incompleto
-
-```yaml
-section: backlog.item.B-008
-id: B-008
-title: Implementar rollback de restore incompleto
-status: todo
-po_priority: 1
-risk: high
-detail_file: scrum/backlog/B-008.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-008 details](backlog/B-008.md#backlog.item.B-008)
 
 ### B-009 - Evitar colisoes e uploads incompletos
 
@@ -475,11 +403,85 @@ owner: "gresendesa"
 created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: planned
-items: []
+items:
+  - B-005
+  - B-006
+  - B-007
+  - B-008
 tags: [backlog, planned]
 ```
 
-No items registered.
+### B-005 - Gerar e validar o manifesto com JSON seguro
+
+```yaml
+section: backlog.item.B-005.planned
+id: B-005
+title: Gerar e validar o manifesto com JSON seguro
+status: planned
+po_priority: 1
+risk: medium
+detail_file: scrum/backlog/B-005.md
+linked_sprint: SPR-2026-02
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-005 details](backlog/B-005.md#backlog.item.B-005)
+
+### B-006 - Fortalecer a validação de integridade
+
+```yaml
+section: backlog.item.B-006.planned
+id: B-006
+title: Fortalecer a validação de integridade
+status: planned
+po_priority: 1
+risk: medium
+detail_file: scrum/backlog/B-006.md
+linked_sprint: SPR-2026-02
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-006 details](backlog/B-006.md#backlog.item.B-006)
+
+### B-007 - Validar o arquivo compactado antes da extração
+
+```yaml
+section: backlog.item.B-007.planned
+id: B-007
+title: Validar o arquivo compactado antes da extração
+status: planned
+po_priority: 1
+risk: high
+detail_file: scrum/backlog/B-007.md
+linked_sprint: SPR-2026-02
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-007 details](backlog/B-007.md#backlog.item.B-007)
+
+### B-008 - Implementar rollback de restore incompleto
+
+```yaml
+section: backlog.item.B-008.planned
+id: B-008
+title: Implementar rollback de restore incompleto
+status: planned
+po_priority: 1
+risk: high
+detail_file: scrum/backlog/B-008.md
+linked_sprint: SPR-2026-02
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-008 details](backlog/B-008.md#backlog.item.B-008)
 
 ### Doing
 

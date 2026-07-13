@@ -69,6 +69,7 @@ created_at: 2026-07-13
 updated_at: 2026-07-13
 sprints:
   - SPR-2026-01
+  - SPR-2026-02
 tags: [sprints, registry]
 ```
 
@@ -89,6 +90,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: SPR-2026-01 details](sprints/SPR-2026-01.md#sprint.SPR-2026-01)
+
+### SPR-2026-02 - Manifesto seguro e restore defensivo
+
+```yaml
+section: sprints.SPR-2026-02
+sprint_id: SPR-2026-02
+title: Manifesto seguro e restore defensivo
+status: planned
+focus: Validar manifesto, integridade, estrutura de arquivo compactado e rollback para impedir restaurações inseguras ou parciais.
+po_priority_summary: B-005, B-006, B-007 e B-008 possuem PO Priority 1.
+sprint_risk: high
+detail_file: scrum/sprints/SPR-2026-02.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-02 details](sprints/SPR-2026-02.md#sprint.SPR-2026-02)
 
 ### SPR-YYYY-NN Template
 

@@ -47,6 +47,34 @@ chmod +x bacwups3.sh
 ```
 4. Siga as instruções em tela para selecionar a operação (Backup/Restore/Verify), o tipo de alvo quando aplicável, o nome/caminho e a URI do bucket S3.
 
+## Configuração AWS com IAM restrito
+
+Para um usuário IAM restrito a um único bucket, configure o bucket explicitamente no `.env`. Assim a TUI não precisa executar `aws s3 ls` sem bucket, operação que exige `s3:ListAllMyBuckets`.
+
+Exemplo:
+
+```bash
+ACCESS_KEY=...
+SECRET_ACCESS_KEY=...
+AWS_REGION=us-east-1
+BACWUPS3_S3_BUCKET=bkp-playground
+```
+
+Também são aceitos os nomes nativos da AWS CLI:
+
+```bash
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_REGION=us-east-1
+BACWUPS3_S3_BUCKET=bkp-playground
+```
+
+Se preferir usar profile, exporte antes de abrir a TUI:
+
+```bash
+AWS_PROFILE=s3-backup AWS_REGION=us-east-1 ./bacwups3.sh
+```
+
 ## Modos de Backup de Diretório
 
 Ao selecionar um diretório para backup, a TUI oferece dois modos:

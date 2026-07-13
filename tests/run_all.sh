@@ -11,6 +11,7 @@ bash tests/restore_defensive_test.sh
 bash tests/backup_unique_docker_test.sh
 bash tests/gitignore_backup_test.sh
 bash tests/verify_backup_test.sh
+bash tests/env_iam_test.sh
 
 bash bundle.sh >/dev/null
 bash -n dist/bacwups3.bundle.sh

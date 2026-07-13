@@ -41,6 +41,28 @@ single_match() {
 }
 
 aws() {
+    if [[ "$1" == "s3api" && "$2" == "head-object" ]]; then
+        local key=""
+        local previous=""
+        local arg
+
+        for arg in "$@"; do
+            if [[ "$previous" == "--key" ]]; then
+                key=$arg
+            fi
+            previous=$arg
+        done
+
+        [[ -n "$key" ]] || fail "head-object sem key"
+        local object="$MOCK_S3/$(basename "$key")"
+        if [[ -f "$object" ]]; then
+            return 0
+        fi
+
+        echo "An error occurred (404) when calling the HeadObject operation: Not Found" >&2
+        return 255
+    fi
+
     if [[ "$1" == "s3" && "$2" == "ls" ]]; then
         local object="$MOCK_S3/$(basename "$3")"
         [[ -f "$object" ]] && printf '2026-07-13 00:00:00 %s %s\n' "$(stat -c '%s' "$object")" "$(basename "$object")"

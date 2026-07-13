@@ -9,6 +9,57 @@ BACWUPS3_WORKSPACE=${BACWUPS3_WORKSPACE:-}
 MANIFEST_SCHEMA_VERSION=1
 DOCKER_BACKUP_IMAGE="alpine:3.20"
 
+load_env_file() {
+    local env_file=${1:-.env}
+    local line
+    local key
+    local value
+
+    [[ -f "$env_file" ]] || return 0
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line=${line//$'\r'/}
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ "$line" == export\ * ]] && line=${line#export }
+        [[ "$line" == *=* ]] || continue
+
+        key=${line%%=*}
+        value=${line#*=}
+        key=${key//[[:space:]]/}
+
+        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+
+        value="${value#"${value%%[![:space:]]*}"}"
+        value="${value%"${value##*[![:space:]]}"}"
+
+        if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+            value=${value:1:${#value}-2}
+        elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+            value=${value:1:${#value}-2}
+        fi
+
+        if [[ -z "${!key:-}" ]]; then
+            export "$key=$value"
+        fi
+    done < "$env_file"
+
+    if [[ -z "${AWS_ACCESS_KEY_ID:-}" && -n "${ACCESS_KEY:-}" ]]; then
+        export AWS_ACCESS_KEY_ID=$ACCESS_KEY
+    fi
+
+    if [[ -z "${AWS_SECRET_ACCESS_KEY:-}" && -n "${SECRET_ACCESS_KEY:-}" ]]; then
+        export AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY
+    fi
+
+    if [[ -z "${AWS_REGION:-}" && -n "${REGION:-}" ]]; then
+        export AWS_REGION=$REGION
+    fi
+
+    if [[ -z "${AWS_DEFAULT_REGION:-}" && -n "${AWS_REGION:-}" ]]; then
+        export AWS_DEFAULT_REGION=$AWS_REGION
+    fi
+}
+
 init_temp_workspace() {
     if [[ -n "$BACWUPS3_WORKSPACE" && -d "$BACWUPS3_WORKSPACE" ]]; then
         return 0
@@ -27,7 +78,24 @@ cleanup_temp_workspace() {
 trap cleanup_temp_workspace EXIT INT TERM
 
 check_aws_session_and_list_buckets() {
+    local configured_bucket=${BACWUPS3_S3_BUCKET:-${S3_BUCKET:-${AWS_S3_BUCKET:-}}}
     local s3_output
+
+    if [[ -n "$configured_bucket" ]]; then
+        configured_bucket=${configured_bucket#s3://}
+        configured_bucket=${configured_bucket%%/*}
+
+        if [[ -z "$configured_bucket" ]]; then
+            return 1
+        fi
+
+        if ! aws s3 ls "s3://$configured_bucket" >/dev/null 2>&1; then
+            return 1
+        fi
+
+        echo "$configured_bucket"
+        return 0
+    fi
 
     if ! s3_output=$(aws s3 ls 2>/dev/null); then
         return 1
@@ -120,17 +188,39 @@ s3_object_uri() {
 
 ensure_s3_object_absent() {
     local s3_uri=$1
-    local listing
+    local s3_path
+    local bucket
+    local key
+    local output
 
-    if ! listing=$(aws s3 ls "$s3_uri" 2>/dev/null); then
-        echo "ERRO: Falha ao verificar objeto remoto '$s3_uri'."
+    s3_path=${s3_uri#s3://}
+    if [[ "$s3_path" == "$s3_uri" || "$s3_path" != */* ]]; then
+        echo "ERRO: URI S3 inválida para verificação de objeto: $s3_uri"
         return 1
     fi
 
-    if [[ -n "$listing" ]]; then
+    bucket=${s3_path%%/*}
+    key=${s3_path#*/}
+
+    if [[ -z "$bucket" || -z "$key" ]]; then
+        echo "ERRO: URI S3 inválida para verificação de objeto: $s3_uri"
+        return 1
+    fi
+
+    if output=$(aws s3api head-object --bucket "$bucket" --key "$key" 2>&1); then
         echo "ERRO: Objeto remoto já existe e não será sobrescrito: $s3_uri"
         return 1
     fi
+
+    if echo "$output" | grep -Eqi '(404|Not Found|NoSuchKey|NotFound)'; then
+        return 0
+    fi
+
+    if [[ -n "$output" ]]; then
+        echo "$output" >&2
+    fi
+    echo "ERRO: Falha ao verificar objeto remoto '$s3_uri'."
+    return 1
 }
 
 remove_remote_object() {

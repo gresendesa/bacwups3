@@ -12,11 +12,13 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DIR/lib_core.sh"
 source "$DIR/lib_ui.sh"
 
+load_env_file "$DIR/.env"
+
 main_loop() {
     local AVAILABLE_BUCKETS
     if ! AVAILABLE_BUCKETS=$(check_aws_session_and_list_buckets); then
         whiptail --title "Erro de Autenticação AWS" --msgbox \
-"Não foi possível executar 'aws s3 ls'.\n\nVerifique se há uma sessão ativa/configuração válida da AWS CLI (credenciais, profile e região)." \
+"Não foi possível validar o acesso ao S3.\n\nVerifique credenciais, profile/região e, para usuário IAM restrito a um bucket, configure BACWUPS3_S3_BUCKET no .env." \
         $WT_HEIGHT $WT_WIDTH
         return 1
     fi

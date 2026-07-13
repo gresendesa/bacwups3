@@ -138,6 +138,7 @@ items:
   - B-012
   - B-013
   - B-014
+  - B-015
 tags: [backlog, done]
 ```
 
@@ -392,6 +393,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: B-014 details](backlog/B-014.md#backlog.item.B-014)
+
+### B-015 - Suportar IAM restrito a bucket único
+
+```yaml
+section: backlog.item.B-015.done
+id: B-015
+title: Suportar IAM restrito a bucket único
+status: done
+po_priority: 1
+risk: medium
+detail_file: scrum/backlog/B-015.md
+linked_sprint: null
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-015 details](backlog/B-015.md#backlog.item.B-015)
 
 ### Pending
 

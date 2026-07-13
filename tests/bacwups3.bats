@@ -23,3 +23,8 @@ setup_file() {
     run bash tests/verify_backup_test.sh
     [ "$status" -eq 0 ]
 }
+
+@test "IAM env configuration" {
+    run bash tests/env_iam_test.sh
+    [ "$status" -eq 0 ]
+}

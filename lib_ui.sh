@@ -1,4 +1,5 @@
 #!/bin/bash
+set -Eeuo pipefail
 
 # ==========================================
 # lib_ui.sh - Configurações e Telas do Whiptail
@@ -22,9 +23,7 @@ get_input() {
     local default_text=$3
     
     local result
-    result=$(whiptail --title "$title" --inputbox "$prompt" $WT_HEIGHT $WT_WIDTH "$default_text" 3>&1 1>&2 2>&3)
-    
-    if [ $? -ne 0 ]; then
+    if ! result=$(whiptail --title "$title" --inputbox "$prompt" $WT_HEIGHT $WT_WIDTH "$default_text" 3>&1 1>&2 2>&3); then
         return 1
     fi
     echo "$result"
@@ -46,10 +45,8 @@ select_docker_volume() {
     fi
 
     local selected_volume
-    selected_volume=$(whiptail --title "Selecionar Volume" --menu "Escolha o volume Docker:" \
-        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
+    if ! selected_volume=$(whiptail --title "Selecionar Volume" --menu "Escolha o volume Docker:" \
+        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
         return 1
     fi
 
@@ -85,10 +82,8 @@ select_directory() {
         done < <(find "$current_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
 
         local selected
-        selected=$(whiptail --title "Selecionar Diretório" --menu "Diretório atual: $current_dir" \
-            $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
-
-        if [ $? -ne 0 ]; then
+        if ! selected=$(whiptail --title "Selecionar Diretório" --menu "Diretório atual: $current_dir" \
+            $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
             return 1
         fi
 
@@ -116,12 +111,10 @@ select_directory() {
 select_directory_backup_mode() {
     local selected_mode
 
-    selected_mode=$(whiptail --title "Modo de Backup do Diretório" --menu "Escolha como o diretório deve ser empacotado:" \
+    if ! selected_mode=$(whiptail --title "Modo de Backup do Diretório" --menu "Escolha como o diretório deve ser empacotado:" \
         $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
         "none" "Diretório completo" \
-        "gitignore" "Projeto Git, respeitando .gitignore" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
+        "gitignore" "Projeto Git, respeitando .gitignore" 3>&1 1>&2 2>&3); then
         return 1
     fi
 
@@ -154,10 +147,8 @@ select_restore_directory() {
         done < <(find "$current_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
 
         local selected
-        selected=$(whiptail --title "Destino da Restauração" --menu "Diretório atual: $current_dir" \
-            $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
-
-        if [ $? -ne 0 ]; then
+        if ! selected=$(whiptail --title "Destino da Restauração" --menu "Diretório atual: $current_dir" \
+            $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
             return 1
         fi
 
@@ -168,9 +159,8 @@ select_restore_directory() {
                 ;;
             "NOVA_PASTA_AQUI")
                 local folder_name
-                folder_name=$(whiptail --title "Nova Subpasta" --inputbox "Digite o nome da subpasta destino:" \
-                    $WT_HEIGHT $WT_WIDTH "" 3>&1 1>&2 2>&3)
-                if [ $? -ne 0 ]; then
+                if ! folder_name=$(whiptail --title "Nova Subpasta" --inputbox "Digite o nome da subpasta destino:" \
+                    $WT_HEIGHT $WT_WIDTH "" 3>&1 1>&2 2>&3); then
                     continue
                 fi
                 folder_name="${folder_name#/}"
@@ -226,10 +216,8 @@ select_s3_path() {
     fi
 
     local selected_bucket
-    selected_bucket=$(whiptail --title "$title" --menu "$bucket_prompt" \
-        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
+    if ! selected_bucket=$(whiptail --title "$title" --menu "$bucket_prompt" \
+        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
         return 1
     fi
 
@@ -238,10 +226,8 @@ select_s3_path() {
     fi
 
     local prefix
-    prefix=$(whiptail --title "$title - Prefixo no Bucket" --inputbox "$prefix_prompt" \
-        $WT_HEIGHT $WT_WIDTH "" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
+    if ! prefix=$(whiptail --title "$title - Prefixo no Bucket" --inputbox "$prefix_prompt" \
+        $WT_HEIGHT $WT_WIDTH "" 3>&1 1>&2 2>&3); then
         return 1
     fi
 
@@ -257,7 +243,7 @@ select_s3_version() {
     local target_label=$3
 
     local files_raw
-    files_raw=$(aws s3 ls "$s3_base_path" | awk '{print $4}' | grep -E "^${target_key}_v[0-9]+\.tar\.gz$" | sort -V)
+    files_raw=$(aws s3 ls "$s3_base_path" | awk '{print $4}' | grep -E "^${target_key}_v[0-9]+\.tar\.gz$" | sort -V || true)
 
     if [[ -z "$files_raw" ]]; then
         whiptail --title "Erro" --msgbox "Nenhum backup encontrado no S3 para '$target_label' no caminho:\n$s3_base_path" $WT_HEIGHT $WT_WIDTH
@@ -270,10 +256,8 @@ select_s3_version() {
     done
 
     local selected_file
-    selected_file=$(whiptail --title "Selecionar Versão" --menu "Escolha qual versão de '$target_label' deseja restaurar:" \
-        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
+    if ! selected_file=$(whiptail --title "Selecionar Versão" --menu "Escolha qual versão de '$target_label' deseja restaurar:" \
+        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
         return 1
     fi
 
@@ -284,7 +268,7 @@ select_s3_backup_file() {
     local s3_base_path=$1
 
     local files_raw
-    files_raw=$(aws s3 ls "$s3_base_path" | awk '{print $4}' | grep -E '\.tar\.gz$' | sort -V)
+    files_raw=$(aws s3 ls "$s3_base_path" | awk '{print $4}' | grep -E '\.tar\.gz$' | sort -V || true)
 
     if [[ -z "$files_raw" ]]; then
         whiptail --title "Erro" --msgbox "Nenhum arquivo de backup (.tar.gz) encontrado em:\n$s3_base_path" $WT_HEIGHT $WT_WIDTH
@@ -298,10 +282,8 @@ select_s3_backup_file() {
     done
 
     local selected_file
-    selected_file=$(whiptail --title "Selecionar Backup" --menu "Escolha o arquivo de backup para restaurar:" \
-        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3)
-
-    if [ $? -ne 0 ]; then
+    if ! selected_file=$(whiptail --title "Selecionar Backup" --menu "Escolha o arquivo de backup para restaurar:" \
+        $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT "${options[@]}" 3>&1 1>&2 2>&3); then
         return 1
     fi
 

@@ -1,16 +1,16 @@
-# bAcWapS3
+# bacwups3
 
-Ferramenta interativa de linha de comando (CLI) desenvolvida em Shell Script (Bash) para automatizar o processo de envio (backup) e recuperação (restore) de volumes Docker e diretórios locais para buckets do AWS S3.
+Ferramenta interativa de linha de comando (CLI) desenvolvida em Shell Script (Bash) para automatizar backup completo versionado e recuperação (restore) de volumes Docker e diretórios locais para buckets do AWS S3.
 
-## 📋 Características Principais
+## Características Principais
 
 * **Interface Visual no Terminal (TUI):** Interação amigável baseada em menus utilizando o `whiptail`.
 * **Suporte a Múltiplos Alvos:** Realiza backup e restore tanto de **volumes gerenciados pelo Docker** quanto de **diretórios arbitrários** do sistema hospedeiro.
 * **Modos de Backup de Diretório:** Diretórios locais podem ser empacotados por completo ou como **Projeto Git**, respeitando automaticamente `.gitignore`, `.git/info/exclude` e excludes globais configurados no Git.
 * **Empacotamento Eficiente:** Todos os dados são obrigatoriamente compactados em um arquivo único no formato `.tar.gz`. A sincronização de arquivos soltos (`aws s3 sync`) não é utilizada.
-* **Versionamento Incremental Inteligente:** Backups sucessivos do mesmo volume/diretório recebem sufixos numéricos sequenciais (ex: `v1`, `v2`, `v3`) automaticamente, preservando o histórico completo no S3.
+* **Backup completo versionado:** Cada execução gera um pacote `.tar.gz` completo e independente, com sufixo de versão sequencial (ex: `v1`, `v2`, `v3`) para preservar histórico no S3.
 
-## 🔒 Segurança e Integridade
+## Segurança e Integridade
 
 * **Proteção Anti-Sobrescrita:** A restauração é imediatamente abortada caso o volume Docker ou o diretório de destino já existam e contenham dados, prevenindo perdas acidentais.
 * **Manifesto JSON de Rastreabilidade:** Cada backup gera um arquivo de metadados correspondente contendo o nome do alvo, versão, máquina de origem, usuário, caminho original, data e hash do pacote.
@@ -19,9 +19,9 @@ Ferramenta interativa de linha de comando (CLI) desenvolvida em Shell Script (Ba
   * Em caso de divergência, o arquivo corrompido é sumariamente apagado e a extração é bloqueada.
 * **Execução Segura:** A ferramenta atua de forma passiva em relação aos serviços; ela emite avisos, mas não pausa contêineres automaticamente. O controle de concorrência é delegado ao administrador.
 
-## 🛠️ Pré-requisitos
+## Pré-requisitos
 
-Para executar o `bAcWapS`, certifique-se de ter os seguintes pacotes instalados no seu ambiente Linux:
+Para executar o `bacwups3`, certifique-se de ter os seguintes pacotes instalados no seu ambiente Linux:
 
 * `bash` (Testado em ambientes Debian/Ubuntu/Mint)
 * `whiptail` (Para renderização da interface TUI)
@@ -30,17 +30,17 @@ Para executar o `bAcWapS`, certifique-se de ter os seguintes pacotes instalados 
 * `docker` (Obrigatório apenas se for interagir com volumes de contêineres)
 * Utilitários padrão do sistema: `tar`, `sha256sum`, `grep`, `awk`
 
-## 🚀 Instalação e Uso
+## Instalação e Uso
 
 1. Clone ou baixe os scripts para o seu servidor.
 2. Certifique-se de que o script principal possui permissão de execução:
 ```bash
-   chmod +x bacwaps.sh
+chmod +x bacwups3.sh
 ```
 
 3. Execute a ferramenta:
 ```bash
-./bAcWapS.sh
+./bacwups3.sh
 ```
 4. Siga as instruções em tela para selecionar a operação (Backup/Restore), o tipo de alvo (Volume/Diretório), o nome/caminho e a URI do bucket S3.
 

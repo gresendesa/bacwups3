@@ -67,11 +67,28 @@ status: active
 owner: "gresendesa"
 created_at: 2026-07-13
 updated_at: 2026-07-13
-sprints: []
+sprints:
+  - SPR-2026-01
 tags: [sprints, registry]
 ```
 
-No concrete sprints registered yet.
+### SPR-2026-01 - Confiabilidade inicial e base operacional
+
+```yaml
+section: sprints.SPR-2026-01
+sprint_id: SPR-2026-01
+title: Confiabilidade inicial e base operacional
+status: done
+focus: Corrigir identidade do projeto, endurecer falhas de script, isolar temporários e tornar o restore básico confiável.
+po_priority_summary: B-001, B-002, B-003 e B-004 possuem PO Priority 1.
+sprint_risk: medium
+detail_file: scrum/sprints/SPR-2026-01.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-01 details](sprints/SPR-2026-01.md#sprint.SPR-2026-01)
 
 ### SPR-YYYY-NN Template
 

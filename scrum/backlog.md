@@ -72,6 +72,7 @@ groups:
   - pending
   - planned
   - doing
+  - review
 tags: [summary, backlog]
 ```
 
@@ -122,11 +123,85 @@ owner: "gresendesa"
 created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: done
-items: []
+items:
+  - B-001
+  - B-002
+  - B-003
+  - B-004
 tags: [backlog, done]
 ```
 
-No items registered.
+### B-001 - Corrigir nomenclatura e documentação
+
+```yaml
+section: backlog.item.B-001.done
+id: B-001
+title: Corrigir nomenclatura e documentação
+status: done
+po_priority: 1
+risk: low
+detail_file: scrum/backlog/B-001.md
+linked_sprint: SPR-2026-01
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-001 details](backlog/B-001.md#backlog.item.B-001)
+
+### B-002 - Habilitar tratamento rigoroso de erros
+
+```yaml
+section: backlog.item.B-002.done
+id: B-002
+title: Habilitar tratamento rigoroso de erros
+status: done
+po_priority: 1
+risk: medium
+detail_file: scrum/backlog/B-002.md
+linked_sprint: SPR-2026-01
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-002 details](backlog/B-002.md#backlog.item.B-002)
+
+### B-003 - Criar workspace temporário seguro
+
+```yaml
+section: backlog.item.B-003.done
+id: B-003
+title: Criar workspace temporário seguro
+status: done
+po_priority: 1
+risk: medium
+detail_file: scrum/backlog/B-003.md
+linked_sprint: SPR-2026-01
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-003 details](backlog/B-003.md#backlog.item.B-003)
+
+### B-004 - Tornar o restore confiável
+
+```yaml
+section: backlog.item.B-004.done
+id: B-004
+title: Tornar o restore confiável
+status: done
+po_priority: 1
+risk: high
+detail_file: scrum/backlog/B-004.md
+linked_sprint: SPR-2026-01
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
 
 ### Pending
 
@@ -139,10 +214,6 @@ created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: pending
 items:
-  - B-001
-  - B-002
-  - B-003
-  - B-004
   - B-005
   - B-006
   - B-007
@@ -422,6 +493,22 @@ updated_at: 2026-07-13
 item_status: doing
 items: []
 tags: [backlog, doing]
+```
+
+No items registered.
+
+### Review
+
+```yaml
+section: backlog.synthetic-summary.review
+title: Backlog Items In Review
+status: active
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+item_status: review
+items: []
+tags: [backlog, review]
 ```
 
 No items registered.

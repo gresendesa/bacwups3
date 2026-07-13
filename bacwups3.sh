@@ -1,7 +1,8 @@
 #!/bin/bash
+set -Eeuo pipefail
 
 # ==========================================
-# S3 Sync Manager - Main Entrypoint
+# bacwups3 - Main Entrypoint
 # ==========================================
 
 # Descobre o diretório real onde este script está salvo
@@ -13,9 +14,7 @@ source "$DIR/lib_ui.sh"
 
 main_loop() {
     local AVAILABLE_BUCKETS
-    AVAILABLE_BUCKETS=$(check_aws_session_and_list_buckets)
-
-    if [[ $? -ne 0 ]]; then
+    if ! AVAILABLE_BUCKETS=$(check_aws_session_and_list_buckets); then
         whiptail --title "Erro de Autenticação AWS" --msgbox \
 "Não foi possível executar 'aws s3 ls'.\n\nVerifique se há uma sessão ativa/configuração válida da AWS CLI (credenciais, profile e região)." \
         $WT_HEIGHT $WT_WIDTH
@@ -33,38 +32,38 @@ main_loop() {
 
     while true; do
         local ACTION
-        ACTION=$(whiptail --title "Gerenciador S3 de Backups" --menu "O que você deseja fazer?" \
+        if ! ACTION=$(whiptail --title "Gerenciador S3 de Backups" --menu "O que você deseja fazer?" \
             $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
             "BACKUP" "Enviar dados para o S3" \
             "RESTORE" "Recuperar dados do S3" \
-            "SAIR" "Sair da aplicação" 3>&1 1>&2 2>&3)
+            "SAIR" "Sair da aplicação" 3>&1 1>&2 2>&3); then
+            break
+        fi
         
-        [[ $? -ne 0 || "$ACTION" == "SAIR" ]] && break
+        [[ "$ACTION" == "SAIR" ]] && break
 
         local TARGET_TYPE
-        TARGET_TYPE=$(whiptail --title "Tipo de Alvo" --menu "Escolha o tipo de dado:" \
+        if ! TARGET_TYPE=$(whiptail --title "Tipo de Alvo" --menu "Escolha o tipo de dado:" \
             $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
             "volume" "Volume Docker" \
-            "dir" "Diretório Local" 3>&1 1>&2 2>&3)
-
-        [[ $? -ne 0 ]] && continue
+            "dir" "Diretório Local" 3>&1 1>&2 2>&3); then
+            continue
+        fi
 
         local TARGET_NAME
         if [[ "$ACTION" == "BACKUP" ]]; then
             if [[ "$TARGET_TYPE" == "volume" ]]; then
                 local AVAILABLE_VOLUMES
                 while true; do
-                    AVAILABLE_VOLUMES=$(list_docker_volumes)
-
-                    if [[ $? -ne 0 ]]; then
+                    if ! AVAILABLE_VOLUMES=$(list_docker_volumes); then
                         whiptail --title "Erro Docker" --msgbox \
 "Não foi possível executar 'docker volume ls'.\n\nVerifique se o Docker está instalado e se o daemon está em execução." \
                         $WT_HEIGHT $WT_WIDTH
                         continue 2
                     fi
 
-                    TARGET_NAME=$(select_docker_volume "$AVAILABLE_VOLUMES")
-                    local volume_select_status=$?
+                    local volume_select_status=0
+                    TARGET_NAME=$(select_docker_volume "$AVAILABLE_VOLUMES") || volume_select_status=$?
 
                     if [[ $volume_select_status -eq 2 ]]; then
                         continue
@@ -74,13 +73,19 @@ main_loop() {
                     break
                 done
             else
-                TARGET_NAME=$(select_directory "$HOME")
+                if ! TARGET_NAME=$(select_directory "$HOME"); then
+                    continue
+                fi
             fi
         else
             if [[ "$TARGET_TYPE" == "volume" ]]; then
-                TARGET_NAME=$(get_input "Volume de Destino" "Digite o nome do volume Docker de destino (novo):" "")
+                if ! TARGET_NAME=$(get_input "Volume de Destino" "Digite o nome do volume Docker de destino (novo):" ""); then
+                    continue
+                fi
             else
-                TARGET_NAME=$(select_restore_directory "$HOME")
+                if ! TARGET_NAME=$(select_restore_directory "$HOME"); then
+                    continue
+                fi
             fi
         fi
 
@@ -88,8 +93,10 @@ main_loop() {
 
         local FILTER_MODE="none"
         if [[ "$ACTION" == "BACKUP" && "$TARGET_TYPE" == "dir" ]]; then
-            FILTER_MODE=$(select_directory_backup_mode)
-            [[ $? -ne 0 || -z "$FILTER_MODE" ]] && continue
+            if ! FILTER_MODE=$(select_directory_backup_mode); then
+                continue
+            fi
+            [[ -z "$FILTER_MODE" ]] && continue
         fi
 
         local TARGET_KEY
@@ -97,12 +104,11 @@ main_loop() {
 
         local S3_PATH
         while true; do
-            S3_PATH=$(select_s3_path "$AVAILABLE_BUCKETS" "$ACTION")
-            local s3_select_status=$?
+            local s3_select_status=0
+            S3_PATH=$(select_s3_path "$AVAILABLE_BUCKETS" "$ACTION") || s3_select_status=$?
 
             if [[ $s3_select_status -eq 2 ]]; then
-                AVAILABLE_BUCKETS=$(check_aws_session_and_list_buckets)
-                if [[ $? -ne 0 ]]; then
+                if ! AVAILABLE_BUCKETS=$(check_aws_session_and_list_buckets); then
                     whiptail --title "Erro de Autenticação AWS" --msgbox \
 "Falha ao atualizar buckets com 'aws s3 ls'.\n\nVerifique se sua sessão AWS continua ativa." \
                     $WT_HEIGHT $WT_WIDTH
@@ -128,32 +134,43 @@ main_loop() {
         if [[ "$ACTION" == "BACKUP" ]]; then
             clear 
             echo "Iniciando processo de Backup..."
-            do_backup "$TARGET_TYPE" "$TARGET_NAME" "$TARGET_KEY" "$S3_PATH" "$FILTER_MODE"
-            read -p "Pressione [ENTER] para voltar ao menu..."
+            if ! do_backup "$TARGET_TYPE" "$TARGET_NAME" "$TARGET_KEY" "$S3_PATH" "$FILTER_MODE"; then
+                echo "Backup não concluído."
+            fi
+            read -r -p "Pressione [ENTER] para voltar ao menu..." || true
         
         elif [[ "$ACTION" == "RESTORE" ]]; then
             local S3_TARGET_FILE
-            S3_TARGET_FILE=$(select_s3_backup_file "$S3_PATH")
-            [[ $? -ne 0 || -z "$S3_TARGET_FILE" ]] && continue
+            if ! S3_TARGET_FILE=$(select_s3_backup_file "$S3_PATH"); then
+                continue
+            fi
+            [[ -z "$S3_TARGET_FILE" ]] && continue
 
             local PREVIEW_MANIFEST
-            PREVIEW_MANIFEST=$(download_manifest_preview "$S3_TARGET_FILE")
-            if [[ $? -ne 0 || -z "$PREVIEW_MANIFEST" ]]; then
+            if ! PREVIEW_MANIFEST=$(download_manifest_preview "$S3_TARGET_FILE"); then
                 whiptail --title "Erro" --msgbox \
 "Não foi possível obter o manifesto correspondente ao arquivo selecionado.\n\nRestauração cancelada." \
                 $WT_HEIGHT $WT_WIDTH
                 continue
             fi
+            if [[ -z "$PREVIEW_MANIFEST" ]]; then
+                whiptail --title "Erro" --msgbox \
+"Manifesto correspondente vazio.\n\nRestauração cancelada." \
+                $WT_HEIGHT $WT_WIDTH
+                continue
+            fi
 
-            confirm_restore_with_manifest "$PREVIEW_MANIFEST" "$S3_TARGET_FILE" "$TARGET_TYPE" "$TARGET_NAME"
-            local restore_confirm_status=$?
+            local restore_confirm_status=0
+            confirm_restore_with_manifest "$PREVIEW_MANIFEST" "$S3_TARGET_FILE" "$TARGET_TYPE" "$TARGET_NAME" || restore_confirm_status=$?
             rm -f "$PREVIEW_MANIFEST"
             [[ $restore_confirm_status -ne 0 ]] && continue
 
             clear
             echo "Iniciando processo de Restauração..."
-            do_restore "$TARGET_TYPE" "$TARGET_NAME" "$S3_TARGET_FILE"
-            read -p "Pressione [ENTER] para voltar ao menu..."
+            if ! do_restore "$TARGET_TYPE" "$TARGET_NAME" "$S3_TARGET_FILE"; then
+                echo "Restauração não concluída."
+            fi
+            read -r -p "Pressione [ENTER] para voltar ao menu..." || true
         fi
     done
 

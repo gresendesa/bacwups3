@@ -5,6 +5,7 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PATH="$ROOT_DIR/tests/fake-bin:$PATH"
 source "$ROOT_DIR/lib_core.sh"
+source "$ROOT_DIR/lib_ui.sh"
 
 WORK_DIR=$(mktemp -d)
 MOCK_S3="$WORK_DIR/s3"
@@ -126,6 +127,63 @@ test_restore_success() {
     assert_file_exists "$dest/file.txt"
 }
 
+test_restore_into_named_subdir_under_existing_parent() {
+    local tar_file="$WORK_DIR/parent.tar.gz"
+    local manifest_file="$WORK_DIR/parent.manifest.json"
+    local parent="$WORK_DIR/existing-parent"
+    local final_dest
+    local checksum
+
+    mkdir -p "$parent"
+    echo "keep" > "$parent/existing.txt"
+
+    make_safe_tar "$tar_file"
+    checksum=$(sha256sum "$tar_file" | awk '{print $1}')
+    write_manifest "$tar_file" "$manifest_file" "$checksum"
+    publish_pair "parent" "$tar_file" "$manifest_file"
+
+    final_dest=$(join_restore_directory_path "$parent" "$(default_restore_directory_name_from_manifest "$manifest_file")")
+    [[ "$final_dest" == "$parent/dest" ]] || fail "destino final inesperado: $final_dest"
+
+    do_restore "dir" "$final_dest" "s3://bucket/parent.tar.gz" >/dev/null
+    assert_file_exists "$parent/existing.txt"
+    assert_file_exists "$parent/dest/file.txt"
+}
+
+test_restore_named_subdir_overwrite_protection() {
+    local tar_file="$WORK_DIR/overwrite.tar.gz"
+    local manifest_file="$WORK_DIR/overwrite.manifest.json"
+    local parent="$WORK_DIR/overwrite-parent"
+    local final_dest="$parent/custom"
+    local checksum
+
+    mkdir -p "$final_dest"
+    echo "existing" > "$final_dest/file.txt"
+
+    make_safe_tar "$tar_file"
+    checksum=$(sha256sum "$tar_file" | awk '{print $1}')
+    write_manifest "$tar_file" "$manifest_file" "$checksum"
+    publish_pair "overwrite" "$tar_file" "$manifest_file"
+
+    if do_restore "dir" "$final_dest" "s3://bucket/overwrite.tar.gz" >/dev/null 2>&1; then
+        fail "restore deveria bloquear subdiretório final existente com dados"
+    fi
+
+    grep -q "existing" "$final_dest/file.txt" || fail "conteúdo existente deveria ser preservado"
+}
+
+test_restore_custom_subdir_path() {
+    local parent="$WORK_DIR/custom-parent"
+    local final_dest
+
+    mkdir -p "$parent"
+    final_dest=$(join_restore_directory_path "$parent" "custom-name")
+    [[ "$final_dest" == "$parent/custom-name" ]] || fail "subdiretório customizado inesperado: $final_dest"
+
+    final_dest=$(join_restore_directory_path "$parent" "../nested/name/")
+    [[ "$final_dest" == "$parent/nested_name" ]] || fail "nome de subdiretório deveria ser saneado: $final_dest"
+}
+
 test_manifest_special_paths_are_valid_json() {
     local tar_file="$WORK_DIR/special.tar.gz"
     local manifest_file="$WORK_DIR/special.manifest.json"
@@ -243,6 +301,9 @@ test_volume_rollback() {
 }
 
 test_restore_success
+test_restore_into_named_subdir_under_existing_parent
+test_restore_named_subdir_overwrite_protection
+test_restore_custom_subdir_path
 test_manifest_special_paths_are_valid_json
 test_invalid_hash_values_do_not_extract
 test_divergent_hash_and_bad_archive_do_not_extract

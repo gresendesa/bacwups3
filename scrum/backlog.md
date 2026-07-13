@@ -141,6 +141,7 @@ items:
   - B-015
   - B-016
   - B-017
+  - B-018
 tags: [backlog, done]
 ```
 
@@ -450,6 +451,24 @@ updated_at: 2026-07-13
 
 [@ref: B-017 details](backlog/B-017.md#backlog.item.B-017)
 
+### B-018 - Restaurar diretório dentro de subdiretório nomeado no destino
+
+```yaml
+section: backlog.item.B-018.done
+id: B-018
+title: Restaurar diretório dentro de subdiretório nomeado no destino
+status: done
+po_priority: 1
+risk: medium
+detail_file: scrum/backlog/B-018.md
+linked_sprint: SPR-2026-08
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-018 details](backlog/B-018.md#backlog.item.B-018)
+
 ### Pending
 
 ```yaml
@@ -494,6 +513,22 @@ updated_at: 2026-07-13
 item_status: review
 items: []
 tags: [backlog, review]
+```
+
+No items registered.
+
+### Doing
+
+```yaml
+section: backlog.synthetic-summary.doing
+title: Backlog Items In Progress
+status: active
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+item_status: doing
+items: []
+tags: [backlog, doing]
 ```
 
 No items registered.
@@ -565,20 +600,6 @@ updated_at: 2026-07-13
 ```
 
 [@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
-
-### Doing
-
-```yaml
-section: backlog.synthetic-summary.doing
-title: Backlog Items In Progress
-status: active
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-item_status: doing
-items: []
-tags: [backlog, doing]
-```
 
 ## Synthetic Template for New Items
 

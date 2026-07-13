@@ -190,6 +190,77 @@ select_restore_directory() {
     done
 }
 
+sanitize_restore_subdir_name() {
+    local folder_name=$1
+
+    folder_name="${folder_name#/}"
+    folder_name="${folder_name%/}"
+    folder_name="${folder_name//../}"
+    folder_name="${folder_name#/}"
+    folder_name="${folder_name%/}"
+    folder_name="${folder_name//\//_}"
+    echo "$folder_name"
+}
+
+join_restore_directory_path() {
+    local parent_dir=$1
+    local folder_name=$2
+
+    folder_name=$(sanitize_restore_subdir_name "$folder_name")
+    [[ -z "$folder_name" ]] && return 1
+
+    if [[ "$parent_dir" == "/" ]]; then
+        echo "/${folder_name}"
+    else
+        echo "${parent_dir%/}/${folder_name}"
+    fi
+}
+
+default_restore_directory_name_from_manifest() {
+    local manifest_file=$1
+    local target_name=""
+    local origin_path=""
+    local default_name=""
+
+    if target_name=$(manifest_field "$manifest_file" "target_name" 2>/dev/null); then
+        target_name="${target_name%/}"
+        default_name=$(basename "$target_name")
+    fi
+
+    if [[ -z "$default_name" || "$default_name" == "." || "$default_name" == "/" || "$default_name" == "null" ]]; then
+        if origin_path=$(manifest_field "$manifest_file" "origin_path" 2>/dev/null); then
+            origin_path="${origin_path%/}"
+            default_name=$(basename "$origin_path")
+        fi
+    fi
+
+    [[ "$default_name" == "." || "$default_name" == "/" || "$default_name" == "null" ]] && default_name=""
+    echo "$default_name"
+}
+
+confirm_restore_directory_name() {
+    local parent_dir=$1
+    local manifest_file=$2
+    local default_name
+
+    default_name=$(default_restore_directory_name_from_manifest "$manifest_file")
+
+    while true; do
+        local folder_name
+        if ! folder_name=$(whiptail --title "Diretório Restaurado" --inputbox \
+"Confirme o nome do diretório que será criado dentro de:\n$parent_dir" \
+            $WT_HEIGHT $WT_WIDTH "$default_name" 3>&1 1>&2 2>&3); then
+            return 1
+        fi
+
+        folder_name=$(sanitize_restore_subdir_name "$folder_name")
+        [[ -z "$folder_name" ]] && continue
+
+        join_restore_directory_path "$parent_dir" "$folder_name"
+        return 0
+    done
+}
+
 select_s3_path() {
     local buckets_raw=$1
     local mode=${2:-backup}

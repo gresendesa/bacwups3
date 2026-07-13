@@ -73,6 +73,9 @@ sprints:
   - SPR-2026-03
   - SPR-2026-04
   - SPR-2026-05
+  - SPR-2026-06
+  - SPR-2026-07
+  - SPR-2026-08
 tags: [sprints, registry]
 ```
 
@@ -201,6 +204,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: SPR-2026-07 details](sprints/SPR-2026-07.md#sprint.SPR-2026-07)
+
+### SPR-2026-08 - Restore de diretório com subdiretório confirmado
+
+```yaml
+section: sprints.SPR-2026-08
+sprint_id: SPR-2026-08
+title: Restore de diretório com subdiretório confirmado
+status: done
+focus: Corrigir o restore de diretórios para criar um subdiretório nomeado dentro do destino escolhido, mantendo a proteção contra sobrescrita.
+po_priority_summary: B-018 possui PO Priority 1.
+sprint_risk: medium
+detail_file: scrum/sprints/SPR-2026-08.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-08 details](sprints/SPR-2026-08.md#sprint.SPR-2026-08)
 
 ### SPR-YYYY-NN Template
 

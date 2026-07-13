@@ -166,6 +166,17 @@ main_loop() {
                 continue
             fi
 
+            if [[ "$TARGET_TYPE" == "dir" ]]; then
+                if ! TARGET_NAME=$(confirm_restore_directory_name "$TARGET_NAME" "$PREVIEW_MANIFEST"); then
+                    rm -f "$PREVIEW_MANIFEST"
+                    continue
+                fi
+                [[ -z "$TARGET_NAME" ]] && {
+                    rm -f "$PREVIEW_MANIFEST"
+                    continue
+                }
+            fi
+
             local restore_confirm_status=0
             confirm_restore_with_manifest "$PREVIEW_MANIFEST" "$S3_TARGET_FILE" "$TARGET_TYPE" "$TARGET_NAME" || restore_confirm_status=$?
             rm -f "$PREVIEW_MANIFEST"

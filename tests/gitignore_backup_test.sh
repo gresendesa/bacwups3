@@ -88,11 +88,14 @@ create_repo() {
     cat > "$repo/.gitignore" <<'EOF'
 *.log
 ignored-root.txt
+.env*
 build/*.tmp
 !build/keep.tmp
 EOF
 
     echo "ignored by root" > "$repo/ignored-root.txt"
+    echo "forced env" > "$repo/.env"
+    echo "forced env local" > "$repo/.env.local"
     echo "tracked despite ignore" > "$repo/tracked.log"
     echo "drop" > "$repo/build/drop.tmp"
     echo "keep" > "$repo/build/keep.tmp"
@@ -103,8 +106,10 @@ break.txt"
 
     cat > "$repo/nested/.gitignore" <<'EOF'
 ignored-sub.txt
+.env*
 EOF
     echo "ignored by nested" > "$repo/nested/ignored-sub.txt"
+    echo "forced nested env" > "$repo/nested/.env.nested"
     echo "visible nested" > "$repo/nested/visible.txt"
 
     echo "info exclude" > "$repo/info-excluded.txt"
@@ -139,19 +144,23 @@ test_gitignore_backup_contents() {
 break.txt"
     assert_file_exists "$extract_dir/build/keep.tmp"
     assert_file_exists "$extract_dir/nested/visible.txt"
+    assert_file_exists "$extract_dir/.git/HEAD"
+    assert_file_exists "$extract_dir/.env"
+    assert_file_exists "$extract_dir/.env.local"
+    assert_file_exists "$extract_dir/nested/.env.nested"
 
     assert_file_absent "$extract_dir/ignored-root.txt"
     assert_file_absent "$extract_dir/nested/ignored-sub.txt"
     assert_file_absent "$extract_dir/build/drop.tmp"
     assert_file_absent "$extract_dir/info-excluded.txt"
-    assert_file_absent "$extract_dir/.git"
 
     grep -q '"filter_mode": "gitignore"' "$manifest"
-    grep -q '"git_metadata_included": false' "$manifest"
+    grep -q '"git_metadata_included": true' "$manifest"
     grep -q '"git_commit": "' "$manifest"
     grep -q '"git_branch": "' "$manifest"
     grep -q '"git_dirty": true' "$manifest"
     grep -q '"backup_mode": "full"' "$manifest"
+    git -C "$extract_dir" rev-parse --is-inside-work-tree >/dev/null
 }
 
 test_normal_directory_filter_mode() {
@@ -206,7 +215,7 @@ test_git_metadata_failure_does_not_cancel_backup() {
     grep -q '"git_commit": null' "$manifest"
     grep -q '"git_branch": null' "$manifest"
     grep -q '"git_dirty": null' "$manifest"
-    grep -q '"git_metadata_included": false' "$manifest"
+    grep -q '"git_metadata_included": true' "$manifest"
 }
 
 test_gitignore_backup_contents

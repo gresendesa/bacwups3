@@ -80,9 +80,9 @@ AWS_PROFILE=s3-backup AWS_REGION=us-east-1 ./bacwups3.sh
 Ao selecionar um diretório para backup, a TUI oferece dois modos:
 
 * **Diretório completo:** comportamento tradicional. O diretório inteiro é compactado sem exclusões automáticas e o manifesto registra `"filter_mode": "none"`.
-* **Projeto Git, respeitando .gitignore:** o diretório precisa pertencer a um repositório Git. A seleção de arquivos é feita com `git ls-files --cached --others --exclude-standard -z`, incluindo arquivos rastreados e arquivos não rastreados não ignorados. O pacote exclui o diretório `.git` e respeita `.gitignore` da raiz, `.gitignore` em subdiretórios, `.git/info/exclude`, excludes globais e regras de reinclusão com `!`.
+* **Projeto Git, respeitando .gitignore:** o diretório precisa pertencer a um repositório Git. A seleção de arquivos da árvore de trabalho é feita com `git ls-files --cached --others --exclude-standard -z`, incluindo arquivos rastreados e arquivos não rastreados não ignorados. O pacote inclui o diretório `.git`, inclui arquivos `.env*` mesmo quando ignorados, e respeita `.gitignore` da raiz, `.gitignore` em subdiretórios, `.git/info/exclude`, excludes globais e regras de reinclusão com `!`.
 
-No modo Git, o manifesto registra `"filter_mode": "gitignore"`, commit, branch, estado dirty e `"git_metadata_included": false`. O backup gerado continua sendo um `.tar.gz` completo e independente.
+No modo Git, o manifesto registra `"filter_mode": "gitignore"`, commit, branch, estado dirty e `"git_metadata_included": true`. O backup gerado continua sendo um `.tar.gz` completo e independente.
 
 ## Testes locais
 

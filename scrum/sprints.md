@@ -166,6 +166,24 @@ updated_at: 2026-07-13
 
 [@ref: SPR-2026-05 details](sprints/SPR-2026-05.md#sprint.SPR-2026-05)
 
+### SPR-2026-06 - Correção do backup Git completo
+
+```yaml
+section: sprints.SPR-2026-06
+sprint_id: SPR-2026-06
+title: Correção do backup Git completo
+status: done
+focus: Corrigir o modo de projeto Git para preservar o diretório .git enquanto mantém o filtro por .gitignore.
+po_priority_summary: B-016 possui PO Priority 1.
+sprint_risk: high
+detail_file: scrum/sprints/SPR-2026-06.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-06 details](sprints/SPR-2026-06.md#sprint.SPR-2026-06)
+
 ### SPR-YYYY-NN Template
 
 ```yaml

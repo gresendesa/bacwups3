@@ -467,7 +467,19 @@ create_gitignore_tar() {
         return 1
     fi
 
-    if ! tar -czf "$tar_file" -C "$project_dir" --null -T "$file_list"; then
+    if ! find "$project_dir" -type f -name '.env*' -printf '%P\0' >> "$file_list"; then
+        echo "ERRO: Falha ao incluir arquivos .env* do projeto Git '$project_dir'."
+        rm -f "$file_list"
+        return 1
+    fi
+
+    if [[ ! -e "$project_dir/.git" ]]; then
+        echo "ERRO: Metadados Git ausentes em '$project_dir/.git'."
+        rm -f "$file_list"
+        return 1
+    fi
+
+    if ! tar -czf "$tar_file" -C "$project_dir" .git --null -T "$file_list"; then
         echo "ERRO: Falha ao compactar o projeto Git '$project_dir'."
         rm -f "$file_list"
         return 1
@@ -548,7 +560,7 @@ do_backup() {
             git_commit=$(get_git_commit "$target_name" || true)
             git_branch=$(get_git_branch "$target_name" || true)
             git_dirty=$(get_git_dirty "$target_name" || true)
-            git_metadata_included="false"
+            git_metadata_included="true"
         else
             filter_mode="none"
             if ! tar -czf "$tar_file" -C "$target_name" .; then

@@ -139,6 +139,7 @@ items:
   - B-013
   - B-014
   - B-015
+  - B-016
 tags: [backlog, done]
 ```
 
@@ -412,6 +413,24 @@ updated_at: 2026-07-13
 
 [@ref: B-015 details](backlog/B-015.md#backlog.item.B-015)
 
+### B-016 - Incluir .git no backup de projeto Git
+
+```yaml
+section: backlog.item.B-016.done
+id: B-016
+title: Incluir .git no backup de projeto Git
+status: done
+po_priority: 1
+risk: high
+detail_file: scrum/backlog/B-016.md
+linked_sprint: SPR-2026-06
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-016 details](backlog/B-016.md#backlog.item.B-016)
+
 ### Pending
 
 ```yaml
@@ -425,6 +444,40 @@ item_status: pending
 items: []
 tags: [backlog, pending]
 ```
+
+No items registered.
+
+### Planned
+
+```yaml
+section: backlog.synthetic-summary.planned
+title: Planned Backlog Items
+status: active
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+item_status: planned
+items: []
+tags: [backlog, planned]
+```
+
+No items registered.
+
+### Review
+
+```yaml
+section: backlog.synthetic-summary.review
+title: Backlog Items In Review
+status: active
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+item_status: review
+items: []
+tags: [backlog, review]
+```
+
+No items registered.
 
 ### B-001 - Corrigir nomenclatura e documentação
 
@@ -494,24 +547,6 @@ updated_at: 2026-07-13
 
 [@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
 
-No items registered.
-
-### Planned
-
-```yaml
-section: backlog.synthetic-summary.planned
-title: Planned Backlog Items
-status: active
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-item_status: planned
-items: []
-tags: [backlog, planned]
-```
-
-No items registered.
-
 ### Doing
 
 ```yaml
@@ -525,24 +560,6 @@ item_status: doing
 items: []
 tags: [backlog, doing]
 ```
-
-No items registered.
-
-### Review
-
-```yaml
-section: backlog.synthetic-summary.review
-title: Backlog Items In Review
-status: active
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-item_status: review
-items: []
-tags: [backlog, review]
-```
-
-No items registered.
 
 ## Synthetic Template for New Items
 

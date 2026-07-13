@@ -457,11 +457,28 @@ owner: "gresendesa"
 created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: planned
-items: []
+items:
+  - B-017
 tags: [backlog, planned]
 ```
 
-No items registered.
+### B-017 - Adicionar teste de integração real para volumes Docker
+
+```yaml
+section: backlog.item.B-017.planned
+id: B-017
+title: Adicionar teste de integração real para volumes Docker
+status: planned
+po_priority: 2
+risk: high
+detail_file: scrum/backlog/B-017.md
+linked_sprint: SPR-2026-07
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-017 details](backlog/B-017.md#backlog.item.B-017)
 
 ### Review
 

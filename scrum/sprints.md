@@ -184,6 +184,24 @@ updated_at: 2026-07-13
 
 [@ref: SPR-2026-06 details](sprints/SPR-2026-06.md#sprint.SPR-2026-06)
 
+### SPR-2026-07 - Integração real de volumes Docker
+
+```yaml
+section: sprints.SPR-2026-07
+sprint_id: SPR-2026-07
+title: Integração real de volumes Docker
+status: planned
+focus: Adicionar teste de integração real para backup e restore de volumes Docker.
+po_priority_summary: B-017 possui PO Priority 2.
+sprint_risk: high
+detail_file: scrum/sprints/SPR-2026-07.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-07 details](sprints/SPR-2026-07.md#sprint.SPR-2026-07)
+
 ### SPR-YYYY-NN Template
 
 ```yaml

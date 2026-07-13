@@ -71,6 +71,7 @@ sprints:
   - SPR-2026-01
   - SPR-2026-02
   - SPR-2026-03
+  - SPR-2026-04
 tags: [sprints, registry]
 ```
 
@@ -127,6 +128,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: SPR-2026-03 details](sprints/SPR-2026-03.md#sprint.SPR-2026-03)
+
+### SPR-2026-04 - Backup de projeto Git
+
+```yaml
+section: sprints.SPR-2026-04
+sprint_id: SPR-2026-04
+title: Backup de projeto Git
+status: done
+focus: Consolidar backup de projetos Git respeitando .gitignore e registrar metadados Git no manifesto.
+po_priority_summary: B-011 e B-012 possuem PO Priority 3.
+sprint_risk: high
+detail_file: scrum/sprints/SPR-2026-04.md
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: SPR-2026-04 details](sprints/SPR-2026-04.md#sprint.SPR-2026-04)
 
 ### SPR-YYYY-NN Template
 

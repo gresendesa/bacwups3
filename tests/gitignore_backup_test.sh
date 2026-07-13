@@ -127,6 +127,7 @@ break.txt"
     grep -q '"filter_mode": "gitignore"' "$manifest"
     grep -q '"git_metadata_included": false' "$manifest"
     grep -q '"git_commit": "' "$manifest"
+    grep -q '"git_branch": "' "$manifest"
     grep -q '"git_dirty": true' "$manifest"
     grep -q '"backup_mode": "full"' "$manifest"
 }
@@ -159,8 +160,36 @@ test_git_mode_outside_repository_fails() {
     [[ ${#files[@]} -eq 0 ]] || fail "modo Git não deveria gerar pacote"
 }
 
+test_git_metadata_failure_does_not_cancel_backup() {
+    local repo="$WORK_DIR/repo-metadata-failure"
+    create_repo "$repo"
+
+    get_git_commit() {
+        return 1
+    }
+
+    get_git_branch() {
+        return 1
+    }
+
+    get_git_dirty() {
+        return 1
+    }
+
+    do_backup "dir" "$repo" "metadata_failure" "s3://bucket/backups/" "gitignore" >/dev/null
+
+    local manifest
+    manifest=$(single_match "$MOCK_S3/metadata_failure_*.manifest.json")
+    grep -q '"filter_mode": "gitignore"' "$manifest"
+    grep -q '"git_commit": null' "$manifest"
+    grep -q '"git_branch": null' "$manifest"
+    grep -q '"git_dirty": null' "$manifest"
+    grep -q '"git_metadata_included": false' "$manifest"
+}
+
 test_gitignore_backup_contents
 test_normal_directory_filter_mode
 test_git_mode_outside_repository_fails
+test_git_metadata_failure_does_not_cancel_backup
 
 echo "OK: gitignore_backup_test"

@@ -387,9 +387,9 @@ do_backup() {
                 rm -f "$tar_file" "$manifest_file"
                 return 1
             fi
-            git_commit=$(get_git_commit "$target_name")
-            git_branch=$(get_git_branch "$target_name")
-            git_dirty=$(get_git_dirty "$target_name")
+            git_commit=$(get_git_commit "$target_name" || true)
+            git_branch=$(get_git_branch "$target_name" || true)
+            git_dirty=$(get_git_dirty "$target_name" || true)
             git_metadata_included="false"
         else
             filter_mode="none"

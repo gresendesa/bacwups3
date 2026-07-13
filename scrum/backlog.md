@@ -134,6 +134,8 @@ items:
   - B-008
   - B-009
   - B-010
+  - B-011
+  - B-012
 tags: [backlog, done]
 ```
 
@@ -317,6 +319,42 @@ updated_at: 2026-07-13
 
 [@ref: B-010 details](backlog/B-010.md#backlog.item.B-010)
 
+### B-011 - Adicionar backup de projeto respeitando .gitignore
+
+```yaml
+section: backlog.item.B-011.done
+id: B-011
+title: Adicionar backup de projeto respeitando .gitignore
+status: done
+po_priority: 3
+risk: high
+detail_file: scrum/backlog/B-011.md
+linked_sprint: SPR-2026-04
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-011 details](backlog/B-011.md#backlog.item.B-011)
+
+### B-012 - Registrar informações Git no manifesto
+
+```yaml
+section: backlog.item.B-012.done
+id: B-012
+title: Registrar informações Git no manifesto
+status: done
+po_priority: 3
+risk: medium
+detail_file: scrum/backlog/B-012.md
+linked_sprint: SPR-2026-04
+owner: "gresendesa"
+created_at: 2026-07-13
+updated_at: 2026-07-13
+```
+
+[@ref: B-012 details](backlog/B-012.md#backlog.item.B-012)
+
 ### Pending
 
 ```yaml
@@ -328,8 +366,6 @@ created_at: 2026-07-13
 updated_at: 2026-07-13
 item_status: pending
 items:
-  - B-011
-  - B-012
   - B-013
   - B-014
 tags: [backlog, pending]
@@ -402,40 +438,6 @@ updated_at: 2026-07-13
 ```
 
 [@ref: B-004 details](backlog/B-004.md#backlog.item.B-004)
-
-### B-011 - Adicionar backup de projeto respeitando .gitignore
-
-```yaml
-section: backlog.item.B-011
-id: B-011
-title: Adicionar backup de projeto respeitando .gitignore
-status: todo
-po_priority: 3
-risk: high
-detail_file: scrum/backlog/B-011.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-011 details](backlog/B-011.md#backlog.item.B-011)
-
-### B-012 - Registrar informacoes Git no manifesto
-
-```yaml
-section: backlog.item.B-012
-id: B-012
-title: Registrar informacoes Git no manifesto
-status: todo
-po_priority: 3
-risk: medium
-detail_file: scrum/backlog/B-012.md
-owner: "gresendesa"
-created_at: 2026-07-13
-updated_at: 2026-07-13
-```
-
-[@ref: B-012 details](backlog/B-012.md#backlog.item.B-012)
 
 ### B-013 - Adicionar verificacao de backup sem restaurar
 

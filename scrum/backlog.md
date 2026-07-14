@@ -142,6 +142,7 @@ items:
   - B-016
   - B-017
   - B-018
+  - B-019
 tags: [backlog, done]
 ```
 
@@ -468,6 +469,24 @@ updated_at: 2026-07-13
 ```
 
 [@ref: B-018 details](backlog/B-018.md#backlog.item.B-018)
+
+### B-019 - Documentar setup IAM AWS com dois buckets
+
+```yaml
+section: backlog.item.B-019.done
+id: B-019
+title: Documentar setup IAM AWS com dois buckets
+status: done
+po_priority: 2
+risk: low
+detail_file: scrum/backlog/B-019.md
+linked_sprint: null
+owner: "gresendesa"
+created_at: 2026-07-14
+updated_at: 2026-07-14
+```
+
+[@ref: B-019 details](backlog/B-019.md#backlog.item.B-019)
 
 ### Pending
 
